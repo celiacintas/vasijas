@@ -18,7 +18,7 @@ class GAN(object):
     for more info on GANs
     """
     def __init__(self, epochs=100, sample=25, batch=64, 
-                 input_h_w=112, latent_v=64):
+                 input_h_w=112, latent_v=64, transforms=None):
         # parameters
         self.epoch = epochs
         self.sample_num = sample
@@ -52,9 +52,7 @@ class GAN(object):
         # load dataset
         imagenet_data = datasets.ImageFolder('data/png/',
                                              tfs.Compose(
-                                             [tfs.RandomChoice([tfs.ColorJitter()]),                                                                                                 tfs.Resize((112, 112)),
-                                              tfs.Grayscale(1),
-                                              tfs.ToTensor()]))
+                                             transforms))
 
         self.data_loader = data.DataLoader(imagenet_data,
                                            batch_size=self.batch_size,
