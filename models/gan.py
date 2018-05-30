@@ -126,10 +126,10 @@ class GAN(object):
         self.train_hist['total_time'] = []
 
         if self.gpu_mode:
-            self.y_real_, self.y_fake_ = Variable(torch.ones(self.batch_size, 1).cuda()),
+            self.y_real_, self.y_fake_ = Variable(torch.ones(self.batch_size, 1).cuda()), \
                                          Variable(torch.zeros(self.batch_size, 1).cuda())
         else:
-            self.y_real_, self.y_fake_ = Variable(torch.ones(self.batch_size, 1)),
+            self.y_real_, self.y_fake_ = Variable(torch.ones(self.batch_size, 1)), \
                                          Variable(torch.zeros(self.batch_size, 1))
 
         self.D.train()
