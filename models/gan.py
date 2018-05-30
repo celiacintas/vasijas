@@ -51,8 +51,7 @@ class GAN(object):
 
         # load dataset
         imagenet_data = datasets.ImageFolder('data/png/',
-                                             tfs.Compose(
-                                             transforms))
+                                             tfs.Compose(transforms))
 
         self.data_loader = data.DataLoader(imagenet_data,
                                            batch_size=self.batch_size,
@@ -62,12 +61,10 @@ class GAN(object):
         # fixed noise
         if self.gpu_mode:
             self.sample_z_ = Variable(torch.rand((self.batch_size,
-                                                 self.z_dim)).cuda(),
-                                                 volatile=True)
+                                                 self.z_dim)).cuda())
         else:
             self.sample_z_ = Variable(torch.rand((self.batch_size,
-                                                  self.z_dim)),
-                                                  volatile=True)
+                                                  self.z_dim)))
             
     def visualize_results(self, epoch, fix=True):
         self.G.eval()
@@ -86,10 +83,10 @@ class GAN(object):
             """ random noise """
             if self.gpu_mode:
                 sample_z_ = Variable(torch.rand((self.batch_size, 
-                                     self.z_dim)).cuda()) #, volatile=True)
+                                     self.z_dim)).cuda())
             else:
                 sample_z_ = Variable(torch.rand((self.batch_size,
-                                     self.z_dim))) #, volatile=True)
+                                     self.z_dim)))
 
             samples = self.G(sample_z_)
 
@@ -98,8 +95,10 @@ class GAN(object):
         else:
             samples = samples.data.numpy().transpose(0, 2, 3, 1)
 
-        utils.save_images(samples[:image_frame_dim * image_frame_dim, :, :, :], [image_frame_dim, image_frame_dim],
-                          self.result_dir + '/' + self.dataset + '/' + self.model_name + '/' + self.model_name + '_epoch%03d' % epoch + '.png')
+        path_images = '/'.join([self.result_dir, self.dataset, self.model_name])
+        utils.save_images(samples[:image_frame_dim * image_frame_dim, :, :, :],
+                          [image_frame_dim, image_frame_dim],
+                           path_images + '/' + self.model_name + '_epoch%03d' % epoch + '.png')
 
     def save(self):
         save_dir = os.path.join(self.save_dir, self.dataset, self.model_name)
@@ -127,9 +126,11 @@ class GAN(object):
         self.train_hist['total_time'] = []
 
         if self.gpu_mode:
-            self.y_real_, self.y_fake_ = Variable(torch.ones(self.batch_size, 1).cuda()), Variable(torch.zeros(self.batch_size, 1).cuda())
+            self.y_real_, self.y_fake_ = Variable(torch.ones(self.batch_size, 1).cuda()),
+                                         Variable(torch.zeros(self.batch_size, 1).cuda())
         else:
-            self.y_real_, self.y_fake_ = Variable(torch.ones(self.batch_size, 1)), Variable(torch.zeros(self.batch_size, 1))
+            self.y_real_, self.y_fake_ = Variable(torch.ones(self.batch_size, 1)),
+                                         Variable(torch.zeros(self.batch_size, 1))
 
         self.D.train()
         print('training start!!')
@@ -178,7 +179,8 @@ class GAN(object):
 
                 if ((iter + 1) % 100) == 0:
                     print("Epoch: [%2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
-                          ((epoch + 1), (iter + 1), self.data_loader.dataset.__len__() // self.batch_size, D_loss.data[0], G_loss.data[0]))
+                          ((epoch + 1), (iter + 1), self.data_loader.dataset.__len__() // 
+                          self.batch_size, D_loss.data[0], G_loss.data[0]))
 
             self.train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
             self.visualize_results((epoch+1))
