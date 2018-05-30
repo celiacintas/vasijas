@@ -85,9 +85,11 @@ class GAN(object):
         else:
             """ random noise """
             if self.gpu_mode:
-                sample_z_ = Variable(torch.rand((self.batch_size, self.z_dim)).cuda(), volatile=True)
+                sample_z_ = Variable(torch.rand((self.batch_size, 
+                                     self.z_dim)).cuda()) #, volatile=True)
             else:
-                sample_z_ = Variable(torch.rand((self.batch_size, self.z_dim)), volatile=True)
+                sample_z_ = Variable(torch.rand((self.batch_size,
+                                     self.z_dim))) #, volatile=True)
 
             samples = self.G(sample_z_)
 
