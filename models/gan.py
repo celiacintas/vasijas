@@ -18,7 +18,7 @@ class GAN(object):
     for more info on GANs
     """
     def __init__(self, epochs=100, sample=25, batch=64, 
-                 input_h_w=112, latent_v=64, transforms=None):
+                 input_h_w=112, latent_v=64, data_path='data/png_clasificados/', transforms=None):
         # parameters
         self.epoch = epochs
         self.sample_num = sample
@@ -50,7 +50,7 @@ class GAN(object):
         utils.print_network(self.D)
 
         # load dataset
-        imagenet_data = datasets.ImageFolder('data/png/',
+        imagenet_data = datasets.ImageFolder(data_path,
                                              tfs.Compose(transforms))
 
         self.data_loader = data.DataLoader(imagenet_data,
@@ -98,7 +98,7 @@ class GAN(object):
         path_images = '/'.join([self.result_dir, self.dataset, self.model_name])
         utils.save_images(samples[:image_frame_dim * image_frame_dim, :, :, :],
                           [image_frame_dim, image_frame_dim],
-                           path_images + '/' + self.model_name + '_epoch%03d' % epoch + '.png')
+                          path_images + '/' + self.model_name + '_epoch%03d' % epoch + '.png')
 
     def save(self):
         save_dir = os.path.join(self.save_dir, self.dataset, self.model_name)
