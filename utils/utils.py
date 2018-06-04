@@ -144,5 +144,8 @@ def create_folder_pytorch_format(df, destination, path):
                 print(os.path.join(root, name))
                 shutil.copy(os.path.join(root, name), destination + str(row[1][1]))
 
+def create_plot_window(vis, xlabel, ylabel, title):
+    return vis.line(X=np.array([1]), Y=np.array([np.nan]), opts=dict(xlabel=xlabel, ylabel=ylabel, title=title))
+    
 if __name__ == "__main__":
     pass
