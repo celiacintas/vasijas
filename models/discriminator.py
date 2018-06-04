@@ -1,5 +1,5 @@
 from torch import nn
-import utils
+from utils import utils
 
 class _D(nn.Module):
     """ Discriminator class"""

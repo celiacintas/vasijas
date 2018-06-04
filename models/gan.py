@@ -9,7 +9,7 @@ from torchvision import transforms as tfs
 from torch.utils import data
 from models.generator import _G
 from models.discriminator import _D
-import utils
+from utils import utils
 import numpy as np
 
 class GAN(object):
