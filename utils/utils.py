@@ -123,10 +123,13 @@ def initialize_weights(net):
             m.bias.data.zero_()
 
 def create_df_from_files(path='data/perfiles_CATA/clases/'):
-    l = list()  
-    for class_, filename in enumerate(os.listdir(path), 1):
+    l = list()
+    files = sorted(os.listdir(path), key=lambda i: int(os.path.splitext(i)[0]))
+    for class_, filename in enumerate(files, 1):
+        print(class_)
         with open(os.path.join(path, filename)) as f:
             lines = f.readlines()
+            print(lines)
             for id_ in lines:
                 l.append((id_.rstrip(), class_))
     df_classes = pd.DataFrame(l, columns=['id', 'class'])
