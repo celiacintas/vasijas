@@ -11,6 +11,9 @@ from torch._utils import _accumulate
 from torch import randperm, utils
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
+from PIL import Image
+from matplotlib import offsetbox
+from sklearn import manifold
 
 
 class Subset(utils.data.Dataset):
@@ -149,6 +152,36 @@ def create_folder_pytorch_format(df, destination, path):
 
 def create_plot_window(vis, xlabel, ylabel, title):
     return vis.line(X=np.array([1]), Y=np.array([np.nan]), opts=dict(xlabel=xlabel, ylabel=ylabel, title=title))
-    
+
+def plot_embedding(X, merged, title=None):
+    x_min, x_max = np.min(X, 0), np.max(X, 0)
+    X = (X - x_min) / (x_max - x_min)
+
+    plt.figure()
+    ax = plt.subplot(111)
+    for i in range(X.shape[0]):
+        plt.text(X[i, 0], X[i, 1], str(merged.iloc[i][1]),
+                 color=plt.cm.Set1(merged.iloc[i][1] / 10.),
+                 fontdict={'weight': 'bold', 'size': 9})
+
+    if hasattr(offsetbox, 'AnnotationBbox'):
+        # only print thumbnails with matplotlib > 1.0
+        shown_images = np.array([[1., 1.]])  # just something big
+        for i in range(merged.shape[0]):
+            dist = np.sum((X[i] - shown_images) ** 2, 1)
+            if np.min(dist) < 4e-3:
+                # don't show points that are too close
+                continue
+            shown_images = np.r_[shown_images, [X[i]]]
+            image =  Image.open('data/perfiles_CATA/png_full/' + merged.iloc[i][0] + '.png')
+            image.thumbnail((28, 28), Image.ANTIALIAS)
+            imagebox = offsetbox.AnnotationBbox(
+                offsetbox.OffsetImage(image, cmap=plt.cm.gray_r),
+                X[i])
+            ax.add_artist(imagebox)
+    plt.xticks([]), plt.yticks([])
+    if title is not None:
+        plt.title(title)
+
 if __name__ == "__main__":
     pass
