@@ -12,17 +12,17 @@ class _C(nn.Module):
         
         self.conv = nn.Sequential(
             nn.Conv2d(self.input_dim, 64, 4, 2, 1),
-            nn.LeakyReLU(0.2),
+            nn.ReLU(),
             nn.Conv2d(64, 128, 4, 2, 1),
             nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.2),
+            nn.ReLU(),
         )
         self.fc = nn.Sequential(
             nn.Linear(128 * (self.input_height // 4) * (self.input_width // 4), 1024),
             nn.BatchNorm1d(1024),
-            nn.LeakyReLU(0.2),
+            nn.ReLU(),
             nn.Linear(1024, self.output_dim),
-            nn.Sigmoid(),
+            nn.Softmax(),
         )
         utils.initialize_weights(self)
 
