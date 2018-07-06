@@ -14,6 +14,7 @@ from mpl_toolkits import mplot3d
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
+import skimage.measure as sk
 
 def save_plot_voxels(voxels, path, iteration):
     print("Plooooot")
@@ -54,6 +55,19 @@ def getVolumeFromSTL(path, sideLen=32):
     volume[np.nonzero(volume)] = 1.0
     gc.collect()
     return volume.astype(np.bool)
+
+def getVFByMarchingCubesSTL(name, voxels, threshold=0.5):
+    """Voxel Vertices, faces"""
+    v, f = sk.marching_cubes_classic(voxels, level=threshold)
+    sample_mesh = trimesh.Trimesh(v, f)
+    sample_mesh.export('/tmp/{}.stl'.format(name))
+    
+    return v, f
+
+
+def plotVoxelVisdom(name, voxels, visdom, title):
+    v, f = getVFByMarchingCubesSTL(name, voxels)
+    visdom.mesh(X=v, Y=f, opts=dict(opacity=0.5, title=title))
 
 class VesselsDataset(data.Dataset):
     """Custom Dataset compatible with torch.utils.data.DataLoader"""
