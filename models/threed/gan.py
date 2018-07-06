@@ -15,8 +15,9 @@ class GAN(object):
     See https://github.com/meetshah1995/tf-3dgan and https://github.com/rimchang/3DGAN-Pytorch 
     for more info on 3DGANs
     """
-    def __init__(self, epochs=100, sample=25, batch=32, betas=(0.5, 0.5), 
-                 latent_v=200, data_path='output/output_obj/', transforms=None):
+    def __init__(self, epochs=100, sample=25, batch=32, betas=(0.5, 0.5),
+                 g_lr=0.0025, d_lr= 0.001, latent_v=200,
+                 data_path='output/output_obj/', transforms=None):
         # parameters
         self.epoch = epochs
         self.betas = betas
@@ -33,9 +34,9 @@ class GAN(object):
         self.G = _G()
         self.D = _D()
         self.G_optimizer = optim.Adam(self.G.parameters(),
-                                      lr=0.0002, betas=self.betas)
+                                      lr=g_lr, betas=self.betas)
         self.D_optimizer = optim.Adam(self.D.parameters(),
-                                      lr=0.0002, betas=self.betas)
+                                      lr=d_lr, betas=self.betas)
 
         if self.gpu_mode:
             self.G.cuda()
@@ -52,7 +53,7 @@ class GAN(object):
         imagenet_data = utils3D.VesselsDataset(data_path)
 
         self.data_loader =  data.DataLoader(imagenet_data, 
-                                            batch_size=batch_size,
+                                            batch_size=self.batch_size,
                                             shuffle=True, num_workers=1)
         self.z_dim = latent_v
 
@@ -99,12 +100,10 @@ class GAN(object):
         self.train_hist['per_epoch_time'] = []
         self.train_hist['total_time'] = []
 
-        if self.gpu_mode:
-            self.y_real_, self.y_fake_ = Variable(torch.ones(self.batch_size, 1).cuda()), \
-                                         Variable(torch.zeros(self.batch_size, 1).cuda())
-        else:
-            self.y_real_, self.y_fake_ = Variable(torch.ones(self.batch_size, 1)), \
-                                         Variable(torch.zeros(self.batch_size, 1))
+
+        self.y_real_, self.y_fake_ = utils3D.var_or_cuda(torch.ones(self.batch_size)), \
+                                     utils3D.var_or_cuda(torch.zeros(self.batch_size))
+   
 
         self.D.train()
         print('training start!!')
