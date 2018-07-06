@@ -16,7 +16,7 @@ class GAN(object):
     for more info on 3DGANs
     """
     def __init__(self, epochs=100, sample=25, batch=32, betas=(0.5, 0.5),
-                 g_lr=0.0025, d_lr= 0.001, latent_v=200,
+                 g_lr=0.0025, d_lr= 0.001, cube_len=64, latent_v=200,
                  data_path='output/output_obj/', transforms=None):
         # parameters
         self.epoch = epochs
@@ -31,7 +31,7 @@ class GAN(object):
         self.model_name = 'GAN3D'
         
         # networks init
-        self.G = _G()
+        self.G = _G(z_latent_space=latent_v)
         self.D = _D()
         self.G_optimizer = optim.Adam(self.G.parameters(),
                                       lr=g_lr, betas=self.betas)
@@ -111,10 +111,12 @@ class GAN(object):
         for epoch in range(self.epoch):
             self.G.train()
             epoch_start_time = time.time()
-            for iter,  (x_, _) in enumerate(self.data_loader):
-                # print("esta es la forma de mi batch,", x_.shape)
-                if iter == self.data_loader.dataset.__len__() // self.batch_size:
-                    break
+            for i,  X in enumerate(self.data_loader):
+                x_ = utils3D.var_or_cuda(X)      
+                print("Batch nro {}".format(i))    
+                if x_.size()[0] != int(self.batch_size):
+                    print("batch_size != {} drop last incompatible batch".format(int(self.batch_size)))
+                    continue
 
                 z_ = torch.rand((self.batch_size, self.z_dim))
 
