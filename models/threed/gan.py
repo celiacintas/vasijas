@@ -118,15 +118,7 @@ class GAN(object):
                     print("batch_size != {} drop last incompatible batch".format(int(self.batch_size)))
                     continue
 
-                z_ = torch.rand((self.batch_size, self.z_dim))
-
-                if self.gpu_mode:
-                    x_, z_ = Variable(x_.cuda()), Variable(z_.cuda())
-                else:
-                    x_, z_ = Variable(x_), Variable(z_)
-
-                # update D network
-                self.D_optimizer.zero_grad()
+                z_ = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))
 
                 D_real = self.D(x_)
                 D_real_loss = self.BCE_loss(D_real, self.y_real_)
@@ -138,32 +130,34 @@ class GAN(object):
                 D_loss = D_real_loss + D_fake_loss
                 self.train_hist['D_loss'].append(D_loss.data[0])
 
-                D_loss.backward()
-                self.D_optimizer.step()
 
                 d_real_acu = torch.ge(D_real_loss.squeeze(), 0.5).float()
                 d_fake_acu = torch.le(D_fake_loss.squeeze(), 0.5).float()
                 d_total_acu = torch.mean(torch.cat((d_real_acu, d_fake_acu),0))
-
-                if d_total_acu <= 0.8:
+                print(d_total_acu)
+                if d_total_acu.data[0] <= 0.8:
                     self.D.zero_grad()
                     D_loss.backward()
                     self.D_optimizer.step()
 
                 # update G network
-                self.G_optimizer.zero_grad()
+                Z = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))   
+
+                #self.G_optimizer.zero_grad()
 
                 G_ = self.G(z_)
                 D_fake = self.D(G_)
                 G_loss = self.BCE_loss(D_fake, self.y_real_)
                 self.train_hist['G_loss'].append(G_loss.data[0])
 
+                self.D.zero_grad()
+                self.G.zero_grad()
                 G_loss.backward()
                 self.G_optimizer.step()
 
-                if ((iter + 1) % 100) == 0:
+                if ((epoch + 1) % 100) == 0:
                     print("Epoch: [%2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
-                          ((epoch + 1), (iter + 1), self.data_loader.dataset.__len__() // 
+                          ((epoch + 1), (epoch + 1), self.data_loader.dataset.__len__() // 
                           self.batch_size, D_loss.data[0], G_loss.data[0]))
 
             self.train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
