@@ -9,6 +9,8 @@ from torch.autograd import Variable
 from models.threed.generator import _G
 from models.threed.discriminator import _D
 import pickle
+import numpy as np
+
 
 class GAN(object):
     """
