@@ -171,9 +171,9 @@ class GAN(object):
         print("Training finish!... save training results")
 
         self.save()
-        animation_path = '/'.join([self.result_dir, self.dataset,
-                                  self.model_name, self.model_name])
-        if not os.path.exists(animation_path):
-            os.makedirs(animation_path)
-        utils.generate_animation(animation_path, self.epoch)
-        utils.loss_plot(self.train_hist, os.path.join(self.save_dir, self.dataset, self.model_name), self.model_name)
+        #animation_path = '/'.join([self.result_dir, self.dataset,
+        #                          self.model_name, self.model_name])
+        #if not os.path.exists(animation_path):
+        #    os.makedirs(animation_path)
+        #utils.generate_animation(animation_path, self.epoch)
+        #utils.loss_plot(self.train_hist, os.path.join(self.save_dir, self.dataset, self.model_name), self.model_name)

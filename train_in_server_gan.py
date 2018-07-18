@@ -22,7 +22,7 @@ def main():
             batch=BSIZE, betas=BETA,
             g_lr=G_LR, d_lr=D_LR, cube_len=CUBE_LEN, latent_v=Z_LATENT_SPACE)
     gan3D.train()
-    gan3D.save()
+    #gan3D.save()
 
 if __name__ == '__main__':
     main()
