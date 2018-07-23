@@ -105,13 +105,9 @@ class GAN(object):
 
         self.y_real_, self.y_fake_ = utils3D.var_or_cuda(torch.ones(self.batch_size)), \
                                      utils3D.var_or_cuda(torch.zeros(self.batch_size))
-   
-
-        self.D.train()
         print('training start!!')
         start_time = time.time()
         for epoch in range(self.epoch):
-            self.G.train()
             epoch_start_time = time.time()
             for i,  X in enumerate(self.data_loader):
                 x_ = utils3D.var_or_cuda(X)      
@@ -136,14 +132,14 @@ class GAN(object):
                 d_real_acu = torch.ge(D_real_loss.squeeze(), 0.5).float()
                 d_fake_acu = torch.le(D_fake_loss.squeeze(), 0.5).float()
                 d_total_acu = torch.mean(torch.cat((d_real_acu, d_fake_acu),0))
-                print(d_total_acu)
+
                 if d_total_acu.data[0] <= 0.8:
                     self.D.zero_grad()
                     D_loss.backward()
                     self.D_optimizer.step()
 
                 # update G network
-                Z = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))   
+                z_ = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))   
 
                 #self.G_optimizer.zero_grad()
 
@@ -157,20 +153,20 @@ class GAN(object):
                 G_loss.backward()
                 self.G_optimizer.step()
 
-                if ((epoch + 1) % 100) == 0:
+                if ((epoch + 1) % 10) == 0:
                     print("Epoch: [%2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
                           ((epoch + 1), (epoch + 1), self.data_loader.dataset.__len__() // 
                           self.batch_size, D_loss.data[0], G_loss.data[0]))
 
             self.train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
             self.visualize_results((epoch+1))
+            self.save()
 
         self.train_hist['total_time'].append(time.time() - start_time)
         print("Avg one epoch time: %.2f, total %d epochs time: %.2f" % (np.mean(self.train_hist['per_epoch_time']),
               self.epoch, self.train_hist['total_time'][0]))
         print("Training finish!... save training results")
 
-        self.save()
         #animation_path = '/'.join([self.result_dir, self.dataset,
         #                          self.model_name, self.model_name])
         #if not os.path.exists(animation_path):
