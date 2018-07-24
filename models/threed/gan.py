@@ -134,7 +134,7 @@ class GAN(object):
                 d_fake_acu = torch.le(D_fake_loss.squeeze(), 0.5).float()
                 d_total_acu = torch.mean(torch.cat((d_real_acu, d_fake_acu),0))
 
-                if d_total_acu <= 0.8:
+                if d_total_acu.data[0] <= 0.8:
                     self.D.zero_grad()
                     D_loss.backward()
                     self.D_optimizer.step()
@@ -158,6 +158,7 @@ class GAN(object):
                     print("Epoch: [%2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
                           ((epoch + 1), (epoch + 1), self.data_loader.dataset.__len__() // 
                           self.batch_size, D_loss.data[0], G_loss.data[0]))
+                    self.visualize_results((epoch+1))
 
             self.train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
             self.visualize_results((epoch+1))
