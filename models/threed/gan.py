@@ -85,14 +85,11 @@ class GAN(object):
         self.G.load_state_dict(torch.load(os.path.join(save_dir, self.model_name + '_G.pkl')))
         self.D.load_state_dict(torch.load(os.path.join(save_dir, self.model_name + '_D.pkl')))
 
-    def visualize_results(self, epoch):
+    def visualize_results(self, samples, epoch):
         output_path = '/'.join([self.result_dir, self.dataset,
                                self.model_name])
         if not os.path.exists(output_path):
             os.makedirs(output_path)
-
-        fake = self.G(self.sample_z_)
-        samples = fake.cpu().data[:self.sample_num].squeeze().numpy()
         utils3D.save_plot_voxels(samples, output_path, epoch)
 
     def train(self):
@@ -161,7 +158,8 @@ class GAN(object):
                     self.visualize_results((epoch+1))
 
             self.train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
-            self.visualize_results((epoch+1))
+            samples = G_.cpu().data[:self.sample_num].squeeze().numpy()
+            self.visualize_results(samples, (epoch+1))
             self.save()
 
         self.train_hist['total_time'].append(time.time() - start_time)
