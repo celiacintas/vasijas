@@ -103,11 +103,10 @@ class GAN(object):
         self.train_hist['total_time'] = []
 
 
-        self.y_real_, self.y_fake_ = utils3D.var_or_cuda(torch.ones(self.batch_size)), \
-                                     utils3D.var_or_cuda(torch.zeros(self.batch_size))
         print('training start!!')
         start_time = time.time()
         for epoch in range(self.epoch):
+            print('epoch nro {}'.format(epoch))
             epoch_start_time = time.time()
             for i,  X in enumerate(self.data_loader):
                 x_ = utils3D.var_or_cuda(X)      
@@ -117,6 +116,8 @@ class GAN(object):
                     continue
 
                 z_ = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))
+                self.y_real_, self.y_fake_ = utils3D.var_or_cuda(torch.ones(self.batch_size)), \
+                                             utils3D.var_or_cuda(torch.zeros(self.batch_size))
 
                 D_real = self.D(x_)
                 D_real_loss = self.BCE_loss(D_real, self.y_real_)
@@ -133,7 +134,7 @@ class GAN(object):
                 d_fake_acu = torch.le(D_fake_loss.squeeze(), 0.5).float()
                 d_total_acu = torch.mean(torch.cat((d_real_acu, d_fake_acu),0))
 
-                if d_total_acu.data[0] <= 0.8:
+                if d_total_acu <= 0.8:
                     self.D.zero_grad()
                     D_loss.backward()
                     self.D_optimizer.step()

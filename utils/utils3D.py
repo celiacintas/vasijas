@@ -13,7 +13,6 @@ matplotlib.use('agg')
 from mpl_toolkits import mplot3d
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
-from mpl_toolkits import mplot3d
 import skimage.measure as sk
 
 def save_plot_voxels(voxels, path, iteration):
