@@ -10,6 +10,7 @@ from models.threed.generator import _G
 from models.threed.discriminator import _D
 import pickle
 import numpy as np
+from torchsummary import summary
 
 
 class GAN(object):
@@ -31,10 +32,11 @@ class GAN(object):
         self.gpu_mode = True
         self.dataset = 'vasijas'
         self.model_name = 'GAN3D'
+        self.z_dim = latent_v
         
         # networks init
         self.G = _G(z_latent_space=latent_v)
-        self.D = _D()
+        self.D = _D(cube_len=cube_len)
         self.G_optimizer = optim.Adam(self.G.parameters(),
                                       lr=g_lr, betas=self.betas)
         self.D_optimizer = optim.Adam(self.D.parameters(),
@@ -47,9 +49,10 @@ class GAN(object):
         else:
             self.BCE_loss = nn.BCELoss()
 
-        print('---------- Networks architecture -------------')
-        utils.print_network(self.G)
-        utils.print_network(self.D)
+        print('---------- Networks architecture Generator -------------')
+        summary(self.G,  (1, latent_v))
+        print('---------- Networks architecture Discriminator  --------')
+        summary(self.D, (1, cube_len, cube_len, cube_len))
 
         # load dataset
         imagenet_data = utils3D.VesselsDataset(data_path)
@@ -57,16 +60,7 @@ class GAN(object):
         self.data_loader =  data.DataLoader(imagenet_data, 
                                             batch_size=self.batch_size,
                                             shuffle=True, num_workers=1)
-        self.z_dim = latent_v
-
-        # fixed noise
-        if self.gpu_mode:
-            self.sample_z_ = Variable(torch.rand((self.batch_size,
-                                                 self.z_dim)).cuda())
-        else:
-            self.sample_z_ = Variable(torch.rand((self.batch_size,
-                                                  self.z_dim)))
-            
+           
     def save(self):
         save_dir = os.path.join(self.save_dir, self.dataset, self.model_name)
 
@@ -99,15 +93,16 @@ class GAN(object):
         self.train_hist['per_epoch_time'] = []
         self.train_hist['total_time'] = []
 
-
         print('training start!!')
         start_time = time.time()
         for epoch in range(self.epoch):
             print('epoch nro {}'.format(epoch))
             epoch_start_time = time.time()
+            
             for i,  X in enumerate(self.data_loader):
-                x_ = utils3D.var_or_cuda(X)      
                 print("Batch nro {}".format(i))    
+                x_ = utils3D.var_or_cuda(X)      
+                
                 if x_.size()[0] != int(self.batch_size):
                     print("batch_size != {} drop last incompatible batch".format(int(self.batch_size)))
                     continue
@@ -119,19 +114,19 @@ class GAN(object):
                 D_real = self.D(x_)
                 D_real_loss = self.BCE_loss(D_real, self.y_real_)
 
-                G_ = self.G(z_)
-                D_fake = self.D(G_)
+                fake = self.G(z_)
+                D_fake = self.D(fake)
                 D_fake_loss = self.BCE_loss(D_fake, self.y_fake_)
 
                 D_loss = D_real_loss + D_fake_loss
                 self.train_hist['D_loss'].append(D_loss.data[0])
 
 
-                d_real_acu = torch.ge(D_real_loss.squeeze(), 0.5).float()
-                d_fake_acu = torch.le(D_fake_loss.squeeze(), 0.5).float()
-                d_total_acu = torch.mean(torch.cat((d_real_acu, d_fake_acu),0))
+                d_real_acu = torch.ge(D_real.squeeze(), 0.5).float()
+                d_fake_acu = torch.le(D_fake.squeeze(), 0.5).float()
+                d_total_acu = torch.mean(torch.cat((d_real_acu, d_fake_acu), 0))
 
-                if d_total_acu.data[0] <= 0.8:
+                if d_total_acu <= 0.8:
                     self.D.zero_grad()
                     D_loss.backward()
                     self.D_optimizer.step()
@@ -141,8 +136,8 @@ class GAN(object):
 
                 #self.G_optimizer.zero_grad()
 
-                G_ = self.G(z_)
-                D_fake = self.D(G_)
+                fake = self.G(z_)
+                D_fake = self.D(fake)
                 G_loss = self.BCE_loss(D_fake, self.y_real_)
                 self.train_hist['G_loss'].append(G_loss.data[0])
 
