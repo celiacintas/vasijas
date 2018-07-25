@@ -150,11 +150,10 @@ class GAN(object):
                     print("Epoch: [%2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
                           ((epoch + 1), (epoch + 1), self.data_loader.dataset.__len__() // 
                           self.batch_size, D_loss.data[0], G_loss.data[0]))
-                    self.visualize_results((epoch+1))
+                    samples = fake.cpu().data[:self.sample_num].squeeze().numpy()
+                    self.visualize_results(samples, (epoch+1))
 
             self.train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
-            samples = G_.cpu().data[:self.sample_num].squeeze().numpy()
-            self.visualize_results(samples, (epoch+1))
             self.save()
 
         self.train_hist['total_time'].append(time.time() - start_time)
