@@ -45,9 +45,9 @@ class GAN(object):
         if self.gpu_mode:
             self.G.cuda()
             self.D.cuda()
-            self.BCE_loss = nn.BCELoss().cuda()
-        else:
-            self.BCE_loss = nn.BCELoss()
+            # self.BCE_loss = nn.BCELoss().cuda()
+
+        self.BCE_loss = nn.BCELoss()
 
         print('---------- Networks architecture Generator -------------')
         summary(self.G,  (1, latent_v))
@@ -101,20 +101,21 @@ class GAN(object):
             
             for i,  X in enumerate(self.data_loader):
                 print("Batch nro {}".format(i))    
-                x_ = utils3D.var_or_cuda(X)      
+                X = utils3D.var_or_cuda(X)      
                 
-                if x_.size()[0] != int(self.batch_size):
+                if X.size()[0] != int(self.batch_size):
                     print("batch_size != {} drop last incompatible batch".format(int(self.batch_size)))
                     continue
 
-                z_ = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))
+                Z = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))
                 self.y_real_, self.y_fake_ = utils3D.var_or_cuda(torch.ones(self.batch_size)), \
                                              utils3D.var_or_cuda(torch.zeros(self.batch_size))
 
-                D_real = self.D(x_)
+                # update D network
+                D_real = self.D(X)
                 D_real_loss = self.BCE_loss(D_real, self.y_real_)
 
-                fake = self.G(z_)
+                fake = self.G(Z)
                 D_fake = self.D(fake)
                 D_fake_loss = self.BCE_loss(D_fake, self.y_fake_)
 
@@ -132,11 +133,9 @@ class GAN(object):
                     self.D_optimizer.step()
 
                 # update G network
-                z_ = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))   
+                Z = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))   
 
-                #self.G_optimizer.zero_grad()
-
-                fake = self.G(z_)
+                fake = self.G(Z)
                 D_fake = self.D(fake)
                 G_loss = self.BCE_loss(D_fake, self.y_real_)
                 self.train_hist['G_loss'].append(G_loss.data[0])
@@ -146,12 +145,11 @@ class GAN(object):
                 G_loss.backward()
                 self.G_optimizer.step()
 
-                if ((epoch + 1) % 10) == 0:
-                    print("Epoch: [%2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
-                          ((epoch + 1), (epoch + 1), self.data_loader.dataset.__len__() // 
-                          self.batch_size, D_loss.data[0], G_loss.data[0]))
-                    samples = fake.cpu().data[:self.sample_num].squeeze().numpy()
-                    self.visualize_results(samples, (epoch+1))
+            print("Epoch: [%2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
+                 ((epoch + 1), (epoch + 1), self.data_loader.dataset.__len__() // 
+                 self.batch_size, D_loss.data[0], G_loss.data[0]))
+            samples = fake.cpu().data[:self.sample_num].squeeze().numpy()
+            self.visualize_results(samples, (epoch+1))
 
             self.train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
             self.save()
