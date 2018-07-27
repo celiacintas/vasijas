@@ -107,7 +107,7 @@ class GAN(object):
                     print("batch_size != {} drop last incompatible batch".format(int(self.batch_size)))
                     continue
 
-                Z = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))
+                Z = utils3D.var_or_cuda(torch.Tensor(self.batch_size, self.z_dim).normal_(0, 0.33))
                 self.y_real_, self.y_fake_ = utils3D.var_or_cuda(torch.ones(self.batch_size)), \
                                              utils3D.var_or_cuda(torch.zeros(self.batch_size))
 
@@ -133,8 +133,7 @@ class GAN(object):
                     self.D_optimizer.step()
 
                 # update G network
-                Z = utils3D.var_or_cuda(torch.randn(self.batch_size, self.z_dim))   
-
+                Z = utils3D.var_or_cuda(torch.Tensor(self.batch_size, self.z_dim).normal_(0, 0.33))
                 fake = self.G(Z)
                 D_fake = self.D(fake)
                 G_loss = self.BCE_loss(D_fake, self.y_real_)
