@@ -120,7 +120,7 @@ class GAN(object):
                 D_fake_loss = self.BCE_loss(D_fake, self.y_fake_)
 
                 D_loss = D_real_loss + D_fake_loss
-                self.train_hist['D_loss'].append(D_loss.data[0])
+                self.train_hist['D_loss'].append(D_loss.item())
 
 
                 d_real_acu = torch.ge(D_real.squeeze(), 0.5).float()
@@ -137,7 +137,7 @@ class GAN(object):
                 fake = self.G(Z)
                 D_fake = self.D(fake)
                 G_loss = self.BCE_loss(D_fake, self.y_real_)
-                self.train_hist['G_loss'].append(G_loss.data[0])
+                self.train_hist['G_loss'].append(G_loss.item())
 
                 self.D.zero_grad()
                 self.G.zero_grad()
@@ -146,7 +146,7 @@ class GAN(object):
 
             print("Epoch: [%2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
                  ((epoch + 1), (epoch + 1), self.data_loader.dataset.__len__() // 
-                 self.batch_size, D_loss.data[0], G_loss.data[0]))
+                 self.batch_size, D_loss.item(), G_loss.item()))
             samples = fake.cpu().data[:self.sample_num].squeeze().numpy()
             self.visualize_results(samples, (epoch+1))
 
