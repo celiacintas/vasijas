@@ -64,8 +64,8 @@ def getVFByMarchingCubesSTL(name, voxels, threshold=0.5):
     return v, f
 
 
-def plotVoxelVisdom(name, voxels, visdom, title):
-    v, f = getVFByMarchingCubesSTL(name, voxels)
+def plotVoxelVisdom(name, voxels, t, visdom, title):
+    v, f = getVFByMarchingCubesSTL(name, voxels, t)
     visdom.mesh(X=v, Y=f, opts=dict(opacity=0.5, title=title))
 
 class VesselsDataset(data.Dataset):
