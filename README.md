@@ -4,3 +4,8 @@
 
 ## 3D GAN based on stl models of solid revolution of 100 semilandmarks
 ![3D GAN](imagenes/gan3d_100epochs.png)
+
+
+### Semilandmarks examples
+![semilandmarks](imagenes/vasija_contorno_1_semilandmark.png)
+![semilandmarks](imagenes/vasija_contorno_2_semilandmark.png)
