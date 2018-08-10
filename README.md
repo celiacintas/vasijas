@@ -1,1 +1,6 @@
-# vasijas
+# vessels
+## 2D GAN generation on 100 epochs
+[2D GAN](imagenes/GAN_epochs.gif)
+
+## 3D GAN based on stl models of solid revolution of 100 semilandmarks
+[3D GAN](imagenes/gan3d_100epochs.png)
