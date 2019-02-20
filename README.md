@@ -1,4 +1,5 @@
-# vessels
+# 2D and 3D pottery geometric analysis and generation
+
 ## 2D GAN generation on 100 epochs
 ![2D GAN](imagenes/GAN_epochs.gif)
 
@@ -9,3 +10,8 @@
 ### Semilandmarks examples
 ![semilandmarks](imagenes/vasija_contorno_1_semilandmark.png)
 ![semilandmarks](imagenes/vasija_contorno_2_semilandmark.png)
+
+
+### TSNE over raw pixel space
+![tsne](imagenes/tsne.png)
+![tsne](imagenes/tsne_otherview.png)
