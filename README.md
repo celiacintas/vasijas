@@ -14,4 +14,4 @@
 
 ### TSNE over raw pixel space
 ![tsne](imagenes/tsne.png)
-![tsne](imagenes/tsne_otherview.png)
+![tsne](imagenes/tsne_2.png)
