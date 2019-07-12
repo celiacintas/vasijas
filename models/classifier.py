@@ -21,14 +21,24 @@ class _C(nn.Module):
             nn.Linear(128 * (self.input_height // 4) * (self.input_width // 4), 1024),
             nn.BatchNorm1d(1024),
             nn.ReLU(),
+        )
+        self.last = nn.Sequential(
             nn.Linear(1024, self.output_dim),
             nn.Softmax(),
         )
+            
         utils.initialize_weights(self)
 
     def forward(self, input_):
         x = self.conv(input_)
         x = x.view(-1, 128 * (self.input_height // 4) * (self.input_width // 4))
         x = self.fc(x)
+        x = self.last(x)
 
+        return x
+    
+    def forward_partial(self, input_):
+        x = self.conv(input_)
+        x = x.view(-1, 128 * (self.input_height // 4) * (self.input_width // 4))
+        x = self.fc(x)
         return x

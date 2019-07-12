@@ -2,7 +2,6 @@ appnope==0.1.0
 attrs==19.1.0
 backcall==0.1.0
 bleach==3.1.0
-certifi==2019.6.16
 chardet==3.0.4
 cycler==0.10.0
 decorator==4.3.2
@@ -45,6 +44,7 @@ PyQt5==5.12
 PyQt5-sip==4.19.14
 pyrsistent==0.14.11
 python-dateutil==2.8.0
+pytorch-ignite==0.2.0
 pytz==2018.9
 PyWavelets==1.0.3
 pyzmq==18.0.0
@@ -60,6 +60,7 @@ terminado==0.8.1
 testpath==0.4.2
 torch==1.0.1.post2
 torchfile==0.1.0
+torchnet==0.0.4
 torchsummary==1.5.1
 torchvision==0.2.2.post3
 tornado==4.5.3

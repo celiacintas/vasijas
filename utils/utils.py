@@ -135,7 +135,7 @@ def create_df_from_files(path='data/perfiles_CATA/clases/'):
         print(class_)
         with open(os.path.join(path, filename)) as f:
             lines = f.readlines()
-            print(lines)
+            #print(lines)
             for id_ in lines:
                 l.append((id_.rstrip(), class_))
     df_classes = pd.DataFrame(l, columns=['id', 'class'])
@@ -198,7 +198,7 @@ def plot_tsne_3D(X_tsne, merged, azim=120, distance=70000):
     plt.savefig("/tmp/movie%d.png" % azim)
 
 # Quizas deberia eliminar 3d o limpiar
-def plot_embedding(X, merged, title=None):
+def plot_embedding(X, merged, title, classes):
     x_min, x_max = np.min(X, 0), np.max(X, 0)
     X = (X - x_min) / (x_max - x_min)
 
@@ -206,7 +206,7 @@ def plot_embedding(X, merged, title=None):
     ax = plt.subplot(111)
     for i in range(X.shape[0]):
         plt.text(X[i, 0], X[i, 1], str(merged.iloc[i][1]),
-                 color=plt.cm.Set1(merged.iloc[i][1] / 10.),
+                 color=plt.cm.Set1(int(merged.iloc[i][1]) / float(classes)),
                  fontdict={'weight': 'bold', 'size': 9})
             
     if hasattr(offsetbox, 'AnnotationBbox'):
@@ -218,9 +218,10 @@ def plot_embedding(X, merged, title=None):
                 continue
 
             shown_images = np.r_[shown_images, [X[i]]]
-            image =  Image.open('data/perfiles_CATA/png_full/' + merged.iloc[i][0] + '.png')
+            #image =  Image.open('data/perfiles_CATA/png_full/' + merged.iloc[i][0] + '.png')
+            image =  Image.open(merged.iloc[i][0])
             inverted_image = PIL.ImageOps.invert(image)
-            inverted_image.thumbnail((28, 28), Image.ANTIALIAS)
+            inverted_image.thumbnail((30, 30), Image.ANTIALIAS)
             imagebox = offsetbox.AnnotationBbox(
                 offsetbox.OffsetImage(inverted_image),
                 X[i])
