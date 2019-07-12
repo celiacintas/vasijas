@@ -132,7 +132,7 @@ def create_df_from_files(path='data/perfiles_CATA/clases/'):
     l = list()
     files = sorted(os.listdir(path), key=lambda i: int(os.path.splitext(i)[0]))
     for class_, filename in enumerate(files, 1):
-        print(class_)
+        #print(class_)
         with open(os.path.join(path, filename)) as f:
             lines = f.readlines()
             #print(lines)
@@ -198,7 +198,7 @@ def plot_tsne_3D(X_tsne, merged, azim=120, distance=70000):
     plt.savefig("/tmp/movie%d.png" % azim)
 
 # Quizas deberia eliminar 3d o limpiar
-def plot_embedding(X, merged, title, classes):
+def plot_embedding(X, merged, title = None, classes=10.):
     x_min, x_max = np.min(X, 0), np.max(X, 0)
     X = (X - x_min) / (x_max - x_min)
 
