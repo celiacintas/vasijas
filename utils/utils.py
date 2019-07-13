@@ -172,7 +172,7 @@ def plot_tsne_3D(X_tsne, merged, azim=120, distance=70000):
     ax2d.axis("off")
     ax.view_init(elev=30., azim=azim)
     for i in range(X_tsne.shape[0]):
-            ax.scatter(X_tsne[i, 0], X_tsne[i, 1], X_tsne[i, 2], c=plt.cm.magma(merged.iloc[i][1] / 11.), s=100)
+            ax.scatter(X_tsne[i, 0], X_tsne[i, 1], X_tsne[i, 2], color=plt.cm.magma(merged.iloc[i][1] / 11.), s=100)
     if hasattr(offsetbox, 'AnnotationBbox'):
         shown_images = np.array([[1., 1., 1.]])
         for i in range(merged.shape[0]):           
