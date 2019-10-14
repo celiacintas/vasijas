@@ -165,7 +165,7 @@ def proj(X, ax, ax2d):
         return ax2d.transData.inverted().transform(tr)
 
 
-def plot_tsne_3D(X_tsne, merged, azim=120, distance=70000):
+def plot_tsne_3D(X_tsne, merged, azim=120, distance=7000):
     fig = plt.figure(figsize=(20, 20))
     ax = fig.add_subplot(111, projection=Axes3D.name)
     ax2d = fig.add_subplot(111,frame_on=False) 
@@ -186,9 +186,10 @@ def plot_tsne_3D(X_tsne, merged, azim=120, distance=70000):
             image =  Image.open('data/perfiles_CATA/png_full/' + merged.iloc[i][0] + '.png')
             inverted_image = PIL.ImageOps.invert(image)
             inverted_image.thumbnail((40, 40), Image.ANTIALIAS)
+            props = dict(boxstyle='round', facecolor='red')
             imagebox = offsetbox.AnnotationBbox(
                 offsetbox.OffsetImage(inverted_image),
-                proj(X_tsne[i], ax, ax2d))
+                proj(X_tsne[i], ax, ax2d), bboxprops=props)
             ax2d.add_artist(imagebox)
 
     ax.set_xlabel('X Label')
@@ -201,14 +202,21 @@ def plot_tsne_3D(X_tsne, merged, azim=120, distance=70000):
 def plot_embedding(X, merged, title = None, classes=10.):
     x_min, x_max = np.min(X, 0), np.max(X, 0)
     X = (X - x_min) / (x_max - x_min)
-
     plt.figure()
     ax = plt.subplot(111)
+    ax.set_facecolor('xkcd:white')
+    """
     for i in range(X.shape[0]):
         plt.text(X[i, 0], X[i, 1], str(merged.iloc[i][1]),
                  color=plt.cm.Set1(int(merged.iloc[i][1]) / float(classes)),
                  fontdict={'weight': 'bold', 'size': 9})
-            
+    """
+    for i in range(X.shape[0]):
+        plt.plot([X[i, 0]], [X[i, 1]], 'o', c="black", markersize=8)
+        plt.plot([X[i, 0]], [X[i, 1]], 'o',c=plt.cm.Greens(int(merged.iloc[i][1]) / float(classes)), markersize=6)
+        #plt.plot([X[i, 0]], [X[i, 1]], 'o',c=plt.cm.Greens(int(merged.iloc[i][1]) / float(classes)), markersize=4)
+ 
+    
     if hasattr(offsetbox, 'AnnotationBbox'):
         shown_images = np.array([[1., 1.]])
         for i in range(merged.shape[0]):           
@@ -218,17 +226,17 @@ def plot_embedding(X, merged, title = None, classes=10.):
                 continue
 
             shown_images = np.r_[shown_images, [X[i]]]
-            #image =  Image.open('data/perfiles_CATA/png_full/' + merged.iloc[i][0] + '.png')
             image =  Image.open(merged.iloc[i][0])
-            inverted_image = PIL.ImageOps.invert(image)
-            inverted_image.thumbnail((30, 30), Image.ANTIALIAS)
+            inverted_image = image #PIL.ImageOps.invert(image)
+            inverted_image.thumbnail((40, 40), Image.ANTIALIAS)
+            props = dict(facecolor='white', alpha=1, lw=1)
             imagebox = offsetbox.AnnotationBbox(
-                offsetbox.OffsetImage(inverted_image),
-                X[i])
+                offsetbox.OffsetImage(inverted_image, cmap=plt.cm.gray),
+                X[i]+0.015, bboxprops=props)
             ax.add_artist(imagebox)
     plt.xticks([]), plt.yticks([])
     if title is not None:
         plt.title(title)
-
+        
 if __name__ == "__main__":
     pass
