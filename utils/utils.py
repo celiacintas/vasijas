@@ -17,7 +17,9 @@ from matplotlib import offsetbox
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 from sklearn import manifold
-
+from torch.autograd import Variable
+from sklearn.metrics import confusion_matrix
+import matplotlib
 
 class Subset(utils.data.Dataset):
     """
@@ -198,10 +200,13 @@ def plot_tsne_3D(X_tsne, merged, azim=120, distance=7000):
     plt.title('t-SNE over the 11 classes of vessels')
     plt.savefig("/tmp/movie%d.png" % azim)
 
+
+
 # Quizas deberia eliminar 3d o limpiar
-def plot_embedding(X, merged, title = None, classes=10.):
+def plot_embedding(X, merged, title = None, classes=11.):
     x_min, x_max = np.min(X, 0), np.max(X, 0)
     X = (X - x_min) / (x_max - x_min)
+    
     plt.figure()
     ax = plt.subplot(111)
     ax.set_facecolor('xkcd:white')
@@ -211,6 +216,43 @@ def plot_embedding(X, merged, title = None, classes=10.):
                  color=plt.cm.Set1(int(merged.iloc[i][1]) / float(classes)),
                  fontdict={'weight': 'bold', 'size': 9})
     """
+    for i in range(X.shape[0]):
+        plt.plot([X[i, 0]], [X[i, 1]], 'o', c="black", markersize=8)
+        plt.plot([X[i, 0]], [X[i, 1]], 'o',c=plt.cm.Set3(int(merged.iloc[i][1])), markersize=6)
+    
+  
+    
+    if hasattr(offsetbox, 'AnnotationBbox'):
+        shown_images = np.array([[1., 1.]])
+        for i in range(merged.shape[0]):           
+            dist = np.sum((X[i] - shown_images) ** 2, 1)
+            if np.min(dist) < 6e-3:
+                # don't show points that are too close
+                continue
+
+            shown_images = np.r_[shown_images, [X[i]]]
+            image =  Image.open(merged.iloc[i][0])
+            inverted_image = image #PIL.ImageOps.invert(image)
+            inverted_image.thumbnail((40, 40), Image.ANTIALIAS)
+            props = dict(facecolor='white', alpha=1, lw=1)
+            imagebox = offsetbox.AnnotationBbox(
+                offsetbox.OffsetImage(inverted_image, cmap=plt.cm.gray),
+                X[i]+0.025, bboxprops=props)
+            ax.add_artist(imagebox)
+    plt.xticks([]), plt.yticks([])
+    #cbar = plt.colorbar()
+    if title is not None:
+        plt.title(title)
+
+"""
+# Quizas deberia eliminar 3d o limpiar
+def plot_embedding(X, merged, title = None, classes=10.):
+    x_min, x_max = np.min(X, 0), np.max(X, 0)
+    X = (X - x_min) / (x_max - x_min)
+    plt.figure()
+    ax = plt.subplot(111)
+    ax.set_facecolor('xkcd:white')
+    
     for i in range(X.shape[0]):
         plt.plot([X[i, 0]], [X[i, 1]], 'o', c="black", markersize=8)
         plt.plot([X[i, 0]], [X[i, 1]], 'o',c=plt.cm.Greens(int(merged.iloc[i][1]) / float(classes)), markersize=6)
@@ -237,6 +279,121 @@ def plot_embedding(X, merged, title = None, classes=10.):
     plt.xticks([]), plt.yticks([])
     if title is not None:
         plt.title(title)
+
+
+"""
+
+def iterations_test_pixel(test_loader, available_device = "cpu"):
+    y_real = list()
+    y_pred = list()
+    for ii, data_ in enumerate(test_loader):
+        input_, label = data_
+        val_input = Variable(input_).to(available_device)
+        val_label = Variable(label.type(torch.LongTensor)).to(available_device)
+        score = val_input
+        y_pred_batch = score.detach().cpu().squeeze().numpy()
+        y_real_batch = val_label.cpu().data.squeeze().numpy()
+        y_real.append(y_real_batch.tolist())
+        y_pred.append(y_pred_batch.tolist())
+
+    y_real = [item for batch in y_real for item in batch]
+    y_pred = [item for batch in y_pred for item in batch]
+    
+    return y_real, y_pred
+
+def plot_confusion_matrix(y_true, y_pred, classes,
+                          filename,normalize=False,
+                          title="",cmap=plt.cm.Greens):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if not title:
+        if normalize:
+            title = ''
+        else:
+            title = ''
+
+    # Compute confusion matrix
+    cm = confusion_matrix(y_true, y_pred)
+    # Only use the labels that appear in the data
+    #classes = classes[unique_labels(y_true, y_pred)]
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    #print(cm)
+
+    fig, ax = plt.subplots()
+    #im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
+    im = ax.imshow(cm, cmap=cmap)
+    ax.figure.colorbar(im, ax=ax)
+    # We want to show all ticks...
+    ax.set(xticks=np.arange(cm.shape[1]),
+           yticks=np.arange(cm.shape[0]),
+           # ... and label them with the respective list entries
+           #xticklabels=classes, yticklabels=classes,
+           title=title,
+           ylabel='',
+           xlabel='')
+    
+    ax.grid(False)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+             rotation_mode="anchor")
+
+    # Loop over data dimensions and create text annotations.
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    #for i in range(cm.shape[0]):
+        #for j in range(cm.shape[1]):
+            #ax.text(j, i, format(cm[i, j], fmt),
+            #        ha="center", va="center",
+            #        color="white" if cm[i, j] > thresh else "black")
+    #fig.tight_layout()
+    plt.savefig(filename, dpi=300, bbox_inches='tight')
+    return ax
+
+def iterations_test(C, test_loader, available_device = "cpu"):
+    y_real = list()
+    y_pred = list()
+
+    for ii, data_ in enumerate(test_loader):
+        input_, label = data_
+        val_input = Variable(input_).to(available_device)
+        val_label = Variable(label.type(torch.LongTensor)).to(available_device)
+        score = C(val_input)
+        _, y_pred_batch = torch.max(score, 1)
+        y_pred_batch = y_pred_batch.cpu().squeeze().numpy()
+        y_real_batch = val_label.cpu().data.squeeze().numpy()
+        y_real.append(y_real_batch.tolist())
+        y_pred.append(y_pred_batch.tolist())
+
+    y_real = [item for batch in y_real for item in batch]
+    y_pred = [item for batch in y_pred for item in batch]
+    
+    return y_real, y_pred
+
+def iterations_test_partial(C, test_loader, available_device = "cpu"):
+    y_real = list()
+    y_pred = list()
+    for ii, data_ in enumerate(test_loader):
+        input_, label = data_
+        val_input = Variable(input_).to(available_device)
+        val_label = Variable(label.type(torch.LongTensor)).to(available_device)
+        score = C.forward_partial(val_input)
+        y_pred_batch = score.detach().cpu().squeeze().numpy()
+        y_real_batch = val_label.cpu().data.squeeze().numpy()
+        y_real.append(y_real_batch.tolist())
+        y_pred.append(y_pred_batch.tolist())
+
+    y_real = [item for batch in y_real for item in batch]
+    y_pred = [item for batch in y_pred for item in batch]
+    
+    return y_real, y_pred
         
 if __name__ == "__main__":
     pass
