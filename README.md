@@ -12,7 +12,7 @@ In this repo you can find:
 ![](result_plot/resNet/unap_resnet.png)
 
 ## UMAP visualization for the CNN with feature extraction
-![](result_plot/custom_cnn/svm_confusion_matrix_custom_cnn.png)
+![](result_plot/custom_cnn/unap_custom_cnn.png)
 
 ## Normalized confusion Matrix of the predicted results of the SVC
 ![](result_plot/resNet/svc_confusion_matrix_resnet.png)
