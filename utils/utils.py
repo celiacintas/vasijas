@@ -203,7 +203,7 @@ def plot_tsne_3D(X_tsne, merged, azim=120, distance=7000):
 
 
 # Quizas deberia eliminar 3d o limpiar
-def plot_embedding(X, merged, title = None, classes=11.):
+def plot_embedding(X, merged, title = None, classes=11., showimage=True):
     x_min, x_max = np.min(X, 0), np.max(X, 0)
     X = (X - x_min) / (x_max - x_min)
     
@@ -222,7 +222,7 @@ def plot_embedding(X, merged, title = None, classes=11.):
     
   
     
-    if hasattr(offsetbox, 'AnnotationBbox'):
+    if showimage and hasattr(offsetbox, 'AnnotationBbox'):
         shown_images = np.array([[1., 1.]])
         for i in range(merged.shape[0]):           
             dist = np.sum((X[i] - shown_images) ** 2, 1)
