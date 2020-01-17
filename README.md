@@ -1,24 +1,18 @@
-# 2D and 3D pottery geometric analysis and generation
+#
+
+Pottery classes
+
 In this repo you can find:
 
-- Preprocessing pipeline with skimage to extract contourns and semilandmarks. solid revolution based on semilandmarks.
-- Dimension reduction over semilandmarks and over raw pixel space and clustering.
+- ResNet pretrain for classification over the 11 pottery classes.
 - CNN classification over the 11 pottery classes.
-- 2D GAN trained network over pixel space to generate new pottery contourns.
-- 3D GAN trained network over voxel space to generate new 3D pottery.
+- Train SVC and RFC.
 
-## 2D GAN generation on 100 epochs
-![2D GAN](imagenes/GAN_epochs.gif)
+## UMAP visualization for the Pretraind ResNet with feature extraction
+![](result_plot/resNet/unap_resnet.png)
 
-## 3D GAN based on stl models of solid revolution of 100 semilandmarks
-![3D GAN](imagenes/gan3d_100epochs.png)
+## UMAP visualization for the CNN with feature extraction
+![](result_plot/custom_cnn/unap_custom_cnn.png)
 
-
-### Semilandmarks examples
-![semilandmarks](imagenes/vasija_contorno_1_semilandmark.png)
-![semilandmarks](imagenes/vasija_contorno_2_semilandmark.png)
-
-
-### TSNE over raw pixel space
-![tsne](imagenes/tsne.png)
-![tsne](imagenes/tsne_2.png)
+## Normalized confusion Matrix of the predicted results of the SVC
+![](result_plot/resNet/svc_confusion_matrix_resnet.png)
