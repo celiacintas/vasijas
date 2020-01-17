@@ -394,6 +394,28 @@ def iterations_test_partial(C, test_loader, available_device = "cpu"):
     y_pred = [item for batch in y_pred for item in batch]
     
     return y_real, y_pred
-        
+
+def iterations_test_partial_image(C, test_loader, available_device = "cpu"):
+    y_real = list()
+    y_pred = list()
+    images = list()
+    for ii, data_ in enumerate(test_loader):
+        input_, label = data_
+        val_input = Variable(input_).to(available_device)
+        val_label = Variable(label.type(torch.LongTensor)).to(available_device)
+        score = C.forward_partial(val_input)
+        y_pred_batch = score.detach().cpu().squeeze().numpy()
+        y_real_batch = val_label.cpu().data.squeeze().numpy()
+        y_real.append(y_real_batch.tolist())
+        y_pred.append(y_pred_batch.tolist())
+        images.append(val_input.detach().cpu().squeeze().numpy().tolist())
+
+    y_real = [item for batch in y_real for item in batch]
+    y_pred = [item for batch in y_pred for item in batch]
+    images = [item for batch in images for item in batch]
+    
+    return y_real, y_pred, images
+
+
 if __name__ == "__main__":
     pass

@@ -13,7 +13,7 @@ class _C(nn.Module):
         self.output_dim = 11
         self.model =  models.resnet18(pretrained=True)
         
-        self.fc = nn.Sequential(
+        self.model.fc = nn.Sequential(
             OrderedDict([
                 #('fc1', nn.Linear(512,100)),
                 #('relu', nn.ReLU()),
