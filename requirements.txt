@@ -65,7 +65,7 @@ torchvision==0.2.2.post3
 tornado==4.5.3
 traitlets==4.3.2
 trimesh==2.38.34
-urllib3==1.25.3
+urllib3==1.25.8
 visdom==0.1.8.8
 wcwidth==0.1.7
 webencodings==0.5.1
