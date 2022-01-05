@@ -7,11 +7,6 @@ Several aspects of past culture, including historical trends, are inferred from 
 
 The raw data belong to binary profile images, corresponding to Iberian wheel-made pottery from various archaeological sites of the upper valley of the Guadalquivir River (Spain). The available images consist of a profile view of the pottery, where image resolutions (in pixels), corresponding to size scale, may vary according to the acquisition settings. We partitioned these images into rim and base portion to simulate the fractures in the profiles. The partitioning criterion and orientation depends on the initial shape (closed or open).
 
-The raw information belong to binary profile images, corresponding to Iberian wheel made pottery from various archaeological sites of the upper valley of the Guadalquivir River (Spain). 
-Reference classification has been done by an expert group, based on morphological criteria, taking 
-into account the presence or absence of certain parts, such as lip, neck, body, base and handles, and the ratios between their corresponding sizes.
-According to these criteria, vessels can be classified as belonging to one of 11 different classes, each one with different number of elements. Nine of them
-correspond to closed shapes, and the two remaining correspond to open shapes. The available images consist of a profile view of the pottery, where image resolutions (in pixels), corresponding to size scale, may vary according to the acquisition settings.
 
 ## More Papers
 
