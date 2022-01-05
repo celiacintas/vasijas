@@ -1,21 +1,3 @@
-
-# Iberian ceramic potteries
-
-## Papers
-
-- Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks
-
-[![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
-[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas)
-
-- Learning feature representation of Iberian ceramics with automatic classification models
-
-[![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2021.01.003-f9f107.svg)](https://doi.org/10.1016/j.culher.2021.01.003)
-[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/unsupervised)
-
-- <b>Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks</b>
-
-
 # Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks
 
 ## Abstract
@@ -30,3 +12,17 @@ Reference classification has been done by an expert group, based on morphologica
 into account the presence or absence of certain parts, such as lip, neck, body, base and handles, and the ratios between their corresponding sizes.
 According to these criteria, vessels can be classified as belonging to one of 11 different classes, each one with different number of elements. Nine of them
 correspond to closed shapes, and the two remaining correspond to open shapes. The available images consist of a profile view of the pottery, where image resolutions (in pixels), corresponding to size scale, may vary according to the acquisition settings.
+
+## More Papers
+
+- Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks
+
+[![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
+[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas)
+
+- Learning feature representation of Iberian ceramics with automatic classification models
+
+[![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2021.01.003-f9f107.svg)](https://doi.org/10.1016/j.culher.2021.01.003)
+[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/unsupervised)
+
+
