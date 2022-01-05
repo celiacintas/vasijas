@@ -1,24 +1,24 @@
-# 2D and 3D pottery geometric analysis and generation
-In this repo you can find:
 
-- Preprocessing pipeline with skimage to extract contourns and semilandmarks. solid revolution based on semilandmarks.
-- Dimension reduction over semilandmarks and over raw pixel space and clustering.
-- CNN classification over the 11 pottery classes.
-- 2D GAN trained network over pixel space to generate new pottery contourns.
-- 3D GAN trained network over voxel space to generate new 3D pottery.
+# Iberian ceramic potteries
 
-## 2D GAN generation on 100 epochs
-![2D GAN](imagenes/GAN_epochs.gif)
+## Dataset
+The raw information belong to binary profile images, corresponding to Iberian wheel made pottery from various archaeological sites of the upper valley of the Guadalquivir River (Spain). 
+Reference classification has been done by an expert group, based on morphological criteria, taking 
+into account the presence or absence of certain parts, such as lip, neck, body, base and handles, and the ratios between their corresponding sizes.
+According to these criteria, vessels can be classified as belonging to one of 11 different classes, each one with different number of elements. Nine of them
+correspond to closed shapes, and the two remaining correspond to open shapes. The available images consist of a profile view of the pottery, where image resolutions (in pixels), corresponding to size scale, may vary according to the acquisition settings.
 
-## 3D GAN based on stl models of solid revolution of 100 semilandmarks
-![3D GAN](imagenes/gan3d_100epochs.png)
+## Papers
 
-
-### Semilandmarks examples
-![semilandmarks](imagenes/vasija_contorno_1_semilandmark.png)
-![semilandmarks](imagenes/vasija_contorno_2_semilandmark.png)
+- Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks (2021) [![DOI](https://img.shields.io/badge/DOI-10.1111/cgf.14197-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005).
+- Learning feature representation of Iberian ceramics with automatic classification models (2021) [![DOI](https://img.shields.io/badge/DOI-10.1111/cgf.14197-f9f107.svg)](https://doi.org/10.1016/j.culher.2021.01.003).
+- Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks (2022).
 
 
-### TSNE over raw pixel space
-![tsne](imagenes/tsne.png)
-![tsne](imagenes/tsne_2.png)
+
+
+
+# Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks
+
+## Abstract
+Several aspects of past culture, including historical trends, are inferred from time-based patterns observed in archaeological artifacts belonging to different periods. Ceramic potteries are significantly helpful in this purpose, given their relative abundance in most archaeological sites. Nonetheless, most available pottery is fragmented, leading to missing morphological information. Currently, the reassembly of fragmented objects from a collection of hundreds of mixed fragments is manually done by experts. To overcome the pitfalls of manual reconstruction and improve the quality of reconstructed samples, here we present a Generative Adversarial Network (GAN) framework tested on an extensive database with complete and fragmented references. Using customized GANs, we trained a model with 1072 samples corresponding to Iberian wheel-made pottery profiles belonging to archaeological sites located in the upper valley of the Guadalquivir River (Spain). We provide quantitative and qualitative assessments to measure the quality of the reconstructed samples, along with domain expert evaluation with archaeologists. The resulting framework is a possible way to facilitate pottery reconstruction from partial fragments of an original piece. 
