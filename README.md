@@ -11,11 +11,9 @@ correspond to closed shapes, and the two remaining correspond to open shapes. Th
 ## Papers
 
 - Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks 
-<br/>
 [![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
-[![CODE](https://img.shields.io/badge/CODE-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
-- Learning feature representation of Iberian ceramics with automatic classification models 
-<br/>
+[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
+- Learning feature representation of Iberian ceramics with automatic classification models
 [![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2021.01.003-f9f107.svg)](https://doi.org/10.1016/j.culher.2021.01.003)
 - Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks.
 
