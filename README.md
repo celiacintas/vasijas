@@ -54,4 +54,4 @@ keywords = {Representation learning, Iberian pottery, Deep learning},
 
 - Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks
 
-[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/IberianGAN)
+[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/iberianGAN)
