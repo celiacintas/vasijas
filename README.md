@@ -7,6 +7,21 @@ Accurate classification of pottery vessels is a key aspect in several archaeolog
 [![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
 [![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/classification)
 
+@article{CINTAS2020106,
+title = {Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks},
+journal = {Journal of Cultural Heritage},
+volume = {41},
+pages = {106-112},
+year = {2020},
+issn = {1296-2074},
+doi = {https://doi.org/10.1016/j.culher.2019.06.005},
+url = {https://www.sciencedirect.com/science/article/pii/S1296207418307775},
+author = {Celia Cintas and Manuel Lucena and José Manuel Fuertes and Claudio Delrieux and Pablo Navarro and Rolando González-José and Manuel Molinos},
+keywords = {Deep learning, Convolutional networks, Pottery profiles, Typologies},
+}
+
+
+
 ## Learning feature representation of Iberian ceramics with automatic classification models
 
 In Cultural Heritage inquiries, a common requirement is to establish time-based trends between archaeological artifacts belonging to different periods of a given culture, enabling among other things to determine chronological inferences with higher accuracy and precision.
@@ -21,6 +36,23 @@ These results provide novel strategies to current research in automatic feature 
 
 [![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2021.01.003-f9f107.svg)](https://doi.org/10.1016/j.culher.2021.01.003)
 [![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/unsupervised)
+
+## Citation
+
+```Latex
+@article{NAVARRO202165,
+title = {Learning feature representation of Iberian ceramics with automatic classification models},
+journal = {Journal of Cultural Heritage},
+volume = {48},
+pages = {65-73},
+year = {2021},
+issn = {1296-2074},
+doi = {https://doi.org/10.1016/j.culher.2021.01.003},
+url = {https://www.sciencedirect.com/science/article/pii/S1296207421000042},
+author = {Pablo Navarro and Celia Cintas and Manuel Lucena and José Manuel Fuertes and Claudio Delrieux and Manuel Molinos},
+keywords = {Representation learning, Iberian pottery, Deep learning},
+}
+```
 
 ## Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks
 
