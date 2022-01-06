@@ -50,7 +50,7 @@ keywords = {Representation learning, Iberian pottery, Deep learning},
 - Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks
 
 [![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
-[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas)
+[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/classification)
 
 - Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks
 
