@@ -7,6 +7,7 @@ Accurate classification of pottery vessels is a key aspect in several archaeolog
 [![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
 [![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/classification)
 
+```Latex
 @article{CINTAS2020106,
 title = {Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks},
 journal = {Journal of Cultural Heritage},
@@ -19,7 +20,7 @@ url = {https://www.sciencedirect.com/science/article/pii/S1296207418307775},
 author = {Celia Cintas and Manuel Lucena and José Manuel Fuertes and Claudio Delrieux and Pablo Navarro and Rolando González-José and Manuel Molinos},
 keywords = {Deep learning, Convolutional networks, Pottery profiles, Typologies},
 }
-
+```
 
 
 ## Learning feature representation of Iberian ceramics with automatic classification models
