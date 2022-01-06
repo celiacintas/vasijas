@@ -33,9 +33,9 @@ keywords = {Deep learning, Convolutional networks, Pottery profiles, Typologies}
 }
 ```
 
-## More Papers
+## More papers in this repo
 
-- Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks
+- Learning feature representation of Iberian ceramics with automatic classification models
 
 [![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2021.01.003-f9f107.svg)](https://doi.org/10.1016/j.culher.2021.01.003)
 [![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/unsupervised)
