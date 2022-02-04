@@ -4,7 +4,6 @@ import PIL.ImageOps
 import numpy as np
 from skimage import measure
 
-
 import sys
 sys.path.insert(0,'../.')
 
@@ -14,8 +13,11 @@ import torch.nn as nn
 import torch
 import PIL.Image as Image
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 
-available_device = 'cuda'
+
+available_device = 'cpu'
 
 transformations = [
                    tfs.Grayscale(),
@@ -29,7 +31,7 @@ trans = tfs.Compose(transformations)
 
 # Model Initiaimgsation
 model_G = netG.Generator(nc_input=2, nc_output=1).to(available_device)
-checkpoint = torch.load("../models/generador_v9_current_5000.pkl")
+checkpoint = torch.load("../models/generador_v9_current_5000.pkl", map_location=torch.device('cpu'))
 model_G.load_state_dict(checkpoint)
 model_G = model_G.eval()
 
