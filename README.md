@@ -9,7 +9,7 @@ Several aspects of past culture, including historical trends, are inferred from 
 The raw data belong to binary profile images, corresponding to Iberian wheel-made pottery from various archaeological sites of the upper valley of the Guadalquivir River (Spain). The available images consist of a profile view of the pottery, where image resolutions (in pixels), corresponding to size scale, may vary according to the acquisition settings. We partitioned these images into rim and base portion to simulate the fractures in the profiles. The partitioning criterion and orientation depends on the initial shape (closed or open).
 
 
-[![DOI](https://img.shields.io/badge/DATASET-f9f107.svg)](https://drive.google.com/file/d/11BfsJQocyZyHcx53IbsZAJFcHasW5yNR/view?usp=sharing)
+[![DOI](https://img.shields.io/badge/LINK_DATASET-f9f107.svg)](https://drive.google.com/file/d/11BfsJQocyZyHcx53IbsZAJFcHasW5yNR/view?usp=sharing)
 
 
 ![DATASET](fig/dataset.png)
