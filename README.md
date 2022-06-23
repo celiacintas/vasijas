@@ -63,14 +63,16 @@ Several aspects of past culture, including historical trends, are inferred from 
 
 
 
-
-[![DOI](https://img.shields.io/badge/DOI-10.1038/s41598-022-14910-7-f9f107.svg)](https://doi.org/10.1038/s41598-022-14910-7)
+[![DOI](https://img.shields.io/badge/DOI-10.1038/s41598.022.14910.7-f9f107.svg)](https://doi.org/10.1038/s41598-022-14910-7)
 [![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/iberianGAN)
 
 ### Citation
 
 ```
 
-Navarro, P., Cintas, C., Lucena, M. et al. Reconstruction of Iberian ceramic potteries using generative adversarial networks. Sci Rep 12, 10644 (2022). https://doi.org/10.1038/s41598-022-14910-7
+Navarro, P., Cintas, C., Lucena, M. et al. 
+Reconstruction of Iberian ceramic potteries using generative adversarial networks. 
+Sci Rep 12, 10644 (2022). 
+https://doi.org/10.1038/s41598-022-14910-7
 
 ```
