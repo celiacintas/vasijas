@@ -5,3 +5,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 */__pycache__/
+data/test/*/*
+data/train/*/*
+weight/*

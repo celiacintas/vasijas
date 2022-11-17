@@ -27,7 +27,6 @@ class FragmentDataset(Dataset):
         frag_id = np.unique(v)[1:]
         #select_frag = np.random.choice(frag_id, np.random.choice(np.arange(1, len(frag_id)), 1)[0], replace=False)
         select_frag = np.random.choice(frag_id, 1, replace=False)
-        print(select_frag)
         for f in frag_id:
             if not(f in select_frag):
                 v[v==f] = 0

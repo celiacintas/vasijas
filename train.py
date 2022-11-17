@@ -1,13 +1,11 @@
-import visualizacion
+
 import numpy as np
 import torch
 from torch import optim
-import time
 from torch.utils import data
 from torch import nn
 from utils.FragmentDataset import FragmentDataset
 import utils.network_vox as nv
-from torchvision import transforms as tfs
 
 Z_LATENT_SPACE = 128
 Z_INTERN_SPACE = 136 #256
