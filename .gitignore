@@ -8,3 +8,4 @@ __pycache__/
 data/test/*/*
 data/train/*/*
 weight/*
+data/class_ana.csv
