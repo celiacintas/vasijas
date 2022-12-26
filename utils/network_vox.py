@@ -54,12 +54,11 @@ class _D(torch.nn.Module):
         return out
     
 class _G_encode_decode(torch.nn.Module):
-    def __init__(self, cube_len=64, z_latent_space=64, z_intern_space=64):
+    def __init__(self, cube_len=64, z_latent_space=64):
         super(_G_encode_decode, self).__init__()
         self.leak = 0.01
         self.cube_len = cube_len
         self.z_latent_space = z_latent_space
-        self.z_intern_space = z_intern_space
 
         padd = (0,0,0)
         if self.cube_len == 32:
@@ -116,18 +115,6 @@ class _G_encode_decode(torch.nn.Module):
             
 
        )
-        self.linear_layer = torch.nn.Sequential(
-            torch.nn.Linear(self.z_intern_space, self.z_latent_space),
-            torch.nn.BatchNorm1d(self.z_latent_space),
-            torch.nn.ReLU()
-        )
-        self.normalized_layer = torch.nn.Sequential(
-            torch.nn.BatchNorm2d(self.z_latent_space),
-        )
-        
-    def normalized_vector(self, z0, z1):
-        x_encode = torch.concat((z0, z1), 1)
-        return self.linear_layer(x_encode)
 
     def forward(self, x):
         x_encode = forward_encode(x)

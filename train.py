@@ -8,13 +8,12 @@ from utils.FragmentDataset import FragmentDataset
 import utils.network_vox as nv
 
 Z_LATENT_SPACE = 128
-Z_INTERN_SPACE = 136 #256
-G_LR = 0.0002 
+G_LR = 0.00002 
 D_LR = 0.0002
-EPOCHS = 1000
+EPOCHS = 100
 BSIZE = 32
 CUBE_LEN = 64
-BETAS = (0.9, 0.9)
+BETAS = (0.9, 0.999)
 
 
 dt = FragmentDataset('./data', 'train')
@@ -22,7 +21,7 @@ dt = FragmentDataset('./data', 'train')
 available_device = "cuda" if torch.cuda.is_available() else "cpu"
 
 D = nv._D().to(available_device)
-G_encode_decode = nv._G_encode_decode(z_latent_space=Z_LATENT_SPACE, z_intern_space=Z_INTERN_SPACE).to(available_device)
+G_encode_decode = nv._G_encode_decode(z_latent_space=Z_LATENT_SPACE).to(available_device)
 
 G_encode_decode_optimizer = optim.Adam(G_encode_decode.parameters(),
                                       lr=G_LR, )
@@ -33,16 +32,6 @@ data_loader = data.DataLoader(dt, batch_size=BSIZE, shuffle=True, drop_last=True
 
 crit_D = nn.BCELoss()
 crit_G = nn.BCELoss()
-
-"""
-PATH = 'weight_bk/v2_G_encode_decode_partial_300.pkl'
-checkpoint = torch.load(PATH)
-G_encode_decode.load_state_dict(checkpoint)
-
-PATH = 'weight_bk/v2_D_partial_300.pkl'
-checkpoint = torch.load(PATH)
-D.load_state_dict(checkpoint)
-"""
 
 for epoch in range(EPOCHS):
     for i,  (mesh_frag, mesh_complete) in enumerate(data_loader):
