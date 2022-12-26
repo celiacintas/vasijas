@@ -131,7 +131,7 @@ class _G_encode_decode(torch.nn.Module):
 
     def forward(self, x):
         x_encode = forward_encode(x)
-        x_decode = forward_decode(x)
+        x_decode = forward_decode(x_encode)
         
         return x_decode
 

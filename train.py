@@ -14,10 +14,10 @@ D_LR = 0.0002
 EPOCHS = 1000
 BSIZE = 32
 CUBE_LEN = 64
-BETAS = (0.9, 0.999)
+BETAS = (0.9, 0.9)
 
 
-dt = FragmentDataset('./data', 'train', )
+dt = FragmentDataset('./data', 'train')
 
 available_device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -54,8 +54,8 @@ for epoch in range(EPOCHS):
         mesh_frag = mesh_frag.float().to(available_device)
         mesh_complete = mesh_complete.float().to(available_device)
 
-        y_real_ = torch.tensor(np.random.uniform(0.7, 1.0, (BSIZE))).to(available_device).float()
-        y_fake_ = torch.tensor(np.random.uniform(0, 0.40, (BSIZE))).to(available_device).float()
+        y_real_ = torch.tensor(np.random.uniform(0.8, 1.0, (BSIZE))).to(available_device).float()
+        y_fake_ = torch.tensor(np.random.uniform(0, 0.20, (BSIZE))).to(available_device).float()
         
         
         # update G network
@@ -70,7 +70,6 @@ for epoch in range(EPOCHS):
     
         G_loss.backward()
         G_encode_decode_optimizer.step()
-        
         
         # update D network
         D.zero_grad()
@@ -94,8 +93,8 @@ for epoch in range(EPOCHS):
         D_optimizer.step()
 
         print("Epoch: [%2d / %2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
-                 ((epoch + 1),EPOCHS, (i + 1), data_loader.dataset.__len__() // 
-                 BSIZE, D_loss.item(), G_loss.item()))
+                    ((epoch + 1),EPOCHS, (i + 1), data_loader.dataset.__len__() // 
+                    BSIZE, D_loss.item(), G_loss.item()))
         
 
     if (epoch+1) % 15 == 0:
