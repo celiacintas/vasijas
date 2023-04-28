@@ -22,7 +22,7 @@ available_device = 'cpu'
 transformations = [
                    tfs.Grayscale(),
                    tfs.Resize((128, 128)),
-                   tfs.Lambda(lambda x: PIL.ImageOps.invert(x)),
+                   #tfs.Lambda(lambda x: PIL.ImageOps.invert(x)),
                    tfs.ToTensor()
 ]
 
