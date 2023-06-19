@@ -1,7 +1,7 @@
-
 # IberianVoxel: Automatic Completion of Iberian Ceramics for Cultural Heritage Studies
 
 ## Abstract
+
 Accurate completion of archaeological artifacts is a critical aspect in several archaeological studies, including documentation of variations in style, inference of chronological and ethnic groups, and trading routes trends, among many others.
 However, most available pottery is fragmented, leading to missing textural and morphological cues.
 Currently, the reassembly and completion of fragmented ceramics is a daunting and time-consuming task, done almost exclusively by hand, which requires the physical manipulation of the fragments.
@@ -12,18 +12,21 @@ Lastly, we provide quantitative and qualitative assessments to measure the quali
 
 ## Dataset
 
-![DATASET](fig/dataset.png)
+![DATASET](fig/figura_2_300ppp_scaled.png)
+![DATASET](fig/fragments.png)
 
 ## Overview
-![DATASET](fig/overview.png)
+
+![DATASET](fig/figura_1_300ppp.png)
 
 ## Results
-![DATASET](fig/result.png)
+
+![DATASET](fig/figura_3_m_300ppp_scaled.png)
 
 ## More Papers
 
 - Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks
-  
+
 [![DOI](https://camo.githubusercontent.com/9cd5cadde3971729b0c553a8df0c851ea4ba193d5a25b30bfd5ec91a6e849f8d/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f444f492d31302e313033382f7334313539382e3032322e31343931302e372d6639663130372e737667)](https://doi.org/10.1038/s41598-022-14910-7)
 [![CODE](https://camo.githubusercontent.com/cab0ba8ebc53130e4e17ecf07c91c58c3d369da13fd2b4dabfb495be044a5c6c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f434f44452d37336666392e737667)](https://github.com/celiacintas/vasijas/tree/iberianGAN)
 
@@ -43,6 +46,3 @@ Lastly, we provide quantitative and qualitative assessments to measure the quali
 Soon IJCAI 2023
 
 ```
-
-
-
