@@ -46,9 +46,7 @@ The raw data belong to binary profile images, corresponding to Iberian wheel-mad
 ### Citation
 
 ```
-
 Soon IJCAI 2023
-
 
 ```
 
