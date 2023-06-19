@@ -22,15 +22,19 @@ The raw data belong to binary profile images, corresponding to Iberian wheel-mad
 
 ## More Papers
 
-- Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks
+- IberianVoxel: Automatic Completion of Iberian Ceramics for Cultural Heritage Studies
 
-[![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
-[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/classification)
+[![CODE](https://camo.githubusercontent.com/cab0ba8ebc53130e4e17ecf07c91c58c3d369da13fd2b4dabfb495be044a5c6c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f434f44452d37336666392e737667)](https://github.com/celiacintas/vasijas/tree/iberianVox)
 
 - Learning feature representation of Iberian ceramics with automatic classification models
 
 [![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2021.01.003-f9f107.svg)](https://doi.org/10.1016/j.culher.2021.01.003)
 [![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/unsupervised)
+
+- Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks
+
+[![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
+[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/classification)
 
 ### Citation
 
