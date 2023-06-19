@@ -11,6 +11,7 @@ The fragments generated are stratified into different size groups and across mul
 Lastly, we provide quantitative and qualitative assessments to measure the quality of the reconstructed voxelized samples by our proposed method and archaeologists' evaluation.
 
 <!-- [![DOI](https://img.shields.io/badge/DOI-10.1038/s41598.022.14910.7-f9f107.svg)](https://doi.org/10.1038/s41598-022-14910-7) -->
+
 [![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/iberianVox)
 
 ### Citation
@@ -38,30 +39,6 @@ Reconstruction of Iberian ceramic potteries using generative adversarial network
 Sci Rep 12, 10644 (2022).
 https://doi.org/10.1038/s41598-022-14910-7
 
-```
-
-## Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks
-
-Accurate classification of pottery vessels is a key aspect in several archaeological inquiries, including documentation of changes in style and ornaments, inference of chronological and ethnic groups, trading routes analyses, and many other matters. We present an unsupervised method for automatic feature extraction and classification of wheel-made vessels. A convolutional neural network was trained with a profile image database from Iberian wheel made pottery vessels found in the upper valley of the Guadalquivir River (Spain). During the design of the model, data augmentation and regularization techniques were implemented to obtain better generalization outcomes. The resulting model is able to provide classification on profile images automatically, with an accuracy mean score of 0.9013. Such computation methods will enhance and complement research on characterization and classification of pottery assemblages based on fragments.
-
-[![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
-[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/classification)
-
-### Citation
-
-```Latex
-@article{CINTAS2020106,
-title = {Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks},
-journal = {Journal of Cultural Heritage},
-volume = {41},
-pages = {106-112},
-year = {2020},
-issn = {1296-2074},
-doi = {https://doi.org/10.1016/j.culher.2019.06.005},
-url = {https://www.sciencedirect.com/science/article/pii/S1296207418307775},
-author = {Celia Cintas and Manuel Lucena and José Manuel Fuertes and Claudio Delrieux and Pablo Navarro and Rolando González-José and Manuel Molinos},
-keywords = {Deep learning, Convolutional networks, Pottery profiles, Typologies},
-}
 ```
 
 ## Learning feature representation of Iberian ceramics with automatic classification models
@@ -93,5 +70,29 @@ doi = {https://doi.org/10.1016/j.culher.2021.01.003},
 url = {https://www.sciencedirect.com/science/article/pii/S1296207421000042},
 author = {Pablo Navarro and Celia Cintas and Manuel Lucena and José Manuel Fuertes and Claudio Delrieux and Manuel Molinos},
 keywords = {Representation learning, Iberian pottery, Deep learning},
+}
+```
+
+## Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks
+
+Accurate classification of pottery vessels is a key aspect in several archaeological inquiries, including documentation of changes in style and ornaments, inference of chronological and ethnic groups, trading routes analyses, and many other matters. We present an unsupervised method for automatic feature extraction and classification of wheel-made vessels. A convolutional neural network was trained with a profile image database from Iberian wheel made pottery vessels found in the upper valley of the Guadalquivir River (Spain). During the design of the model, data augmentation and regularization techniques were implemented to obtain better generalization outcomes. The resulting model is able to provide classification on profile images automatically, with an accuracy mean score of 0.9013. Such computation methods will enhance and complement research on characterization and classification of pottery assemblages based on fragments.
+
+[![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
+[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/classification)
+
+### Citation
+
+```Latex
+@article{CINTAS2020106,
+title = {Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks},
+journal = {Journal of Cultural Heritage},
+volume = {41},
+pages = {106-112},
+year = {2020},
+issn = {1296-2074},
+doi = {https://doi.org/10.1016/j.culher.2019.06.005},
+url = {https://www.sciencedirect.com/science/article/pii/S1296207418307775},
+author = {Celia Cintas and Manuel Lucena and José Manuel Fuertes and Claudio Delrieux and Pablo Navarro and Rolando González-José and Manuel Molinos},
+keywords = {Deep learning, Convolutional networks, Pottery profiles, Typologies},
 }
 ```
