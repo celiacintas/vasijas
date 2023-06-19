@@ -29,12 +29,12 @@ Lastly, we provide quantitative and qualitative assessments to measure the quali
 
 - Learning feature representation of Iberian ceramics with automatic classification models
 
-[![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2021.01.003-f9f107.svg)](https://doi.org/10.1016/j.culher.2021.01.003)
+[![DOI](https://camo.githubusercontent.com/b4f5d9ec8bf9e3ac10e481b99c8f3dd8b660b0b85a9caef1c78daed60974f724/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f444f492d31302e313031362f6a2e63756c6865722e323032312e30312e3030332d6639663130372e737667)](https://doi.org/10.1016/j.culher.2021.01.003)
 [![CODE](https://camo.githubusercontent.com/cab0ba8ebc53130e4e17ecf07c91c58c3d369da13fd2b4dabfb495be044a5c6c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f434f44452d37336666392e737667)](https://github.com/celiacintas/vasijas/tree/unsupervised)
 
 - Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks
 
-[![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
+[![DOI](https://camo.githubusercontent.com/8139bfdbfa153ff4989dac3f4622ece7adff84137be5916b26d300acdaf06aed/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f444f492d31302e313031362f6a2e63756c6865722e323031392e30362e3030352d6639663130372e737667)](https://doi.org/10.1016/j.culher.2019.06.005)
 [![CODE](https://camo.githubusercontent.com/cab0ba8ebc53130e4e17ecf07c91c58c3d369da13fd2b4dabfb495be044a5c6c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f434f44452d37336666392e737667)](https://github.com/celiacintas/vasijas/tree/classification)
 
 ### Citation
