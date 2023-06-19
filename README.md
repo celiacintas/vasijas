@@ -47,11 +47,18 @@ keywords = {Representation learning, Iberian pottery, Deep learning},
 
 ## More Papers
 
+- IberianVoxel: Automatic Completion of Iberian Ceramics for Cultural Heritage Studies
+  
+[![CODE](https://camo.githubusercontent.com/cab0ba8ebc53130e4e17ecf07c91c58c3d369da13fd2b4dabfb495be044a5c6c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f434f44452d37336666392e737667)](https://github.com/celiacintas/vasijas/tree/iberianVox)
+
+- Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks
+  
+[![DOI](https://camo.githubusercontent.com/9cd5cadde3971729b0c553a8df0c851ea4ba193d5a25b30bfd5ec91a6e849f8d/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f444f492d31302e313033382f7334313539382e3032322e31343931302e372d6639663130372e737667)](https://doi.org/10.1038/s41598-022-14910-7)
+[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/iberianGAN)
+
 - Automatic feature extraction and classification of Iberian ceramics based on deep convolutional networks
 
 [![DOI](https://img.shields.io/badge/DOI-10.1016/j.culher.2019.06.005-f9f107.svg)](https://doi.org/10.1016/j.culher.2019.06.005)
 [![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/classification)
 
-- Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks
 
-[![CODE](https://img.shields.io/badge/CODE-73ff9.svg)](https://github.com/celiacintas/vasijas/tree/iberianGAN)
