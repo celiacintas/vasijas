@@ -33,11 +33,16 @@ Several aspects of past culture, including historical trends, are inferred from 
 ### Citation
 
 ```
-
-Navarro, P., Cintas, C., Lucena, M. et al.
-Reconstruction of Iberian ceramic potteries using generative adversarial networks.
-Sci Rep 12, 10644 (2022).
-https://doi.org/10.1038/s41598-022-14910-7
+@article{navarro2022reconstruction,
+  title={Reconstruction of Iberian ceramic potteries using generative adversarial networks},
+  author={Navarro, Pablo and Cintas, Celia and Lucena, Manuel and Fuertes, Jos{\'e} Manuel and Segura, Rafael and Delrieux, Claudio and Gonz{\'a}lez-Jos{\'e}, Rolando},
+  journal={Scientific Reports},
+  volume={12},
+  number={1},
+  pages={10644},
+  year={2022},
+  publisher={Nature Publishing Group UK London}
+}
 
 ```
 
