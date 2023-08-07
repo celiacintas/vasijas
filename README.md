@@ -12,6 +12,28 @@ Lastly, we provide quantitative and qualitative assessments to measure the quali
 
 ## Dataset
 
+## Dataset
+
+[Download the dataset](https://drive.google.com/file/d/1EPdY6lI2DYYYVtqGVT6-GFNCxTnxBlXV/view?usp=sharing) and put in `vasijas/data`.
+      
+```
+vasijas
+└── data
+    ├── Test
+          └── 1
+          └── 2
+          └── 3
+          ...
+          └── 11
+    ├── Train
+          └── 1
+          └── 2
+          └── 3
+          ...
+          └── 11
+    
+```
+
 ![DATASET](fig/figura_2_300ppp_scaled.png)
 ![DATASET](fig/fragments.png)
 
