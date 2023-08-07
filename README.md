@@ -37,6 +37,10 @@ vasijas
 ![DATASET](fig/figura_2_300ppp_scaled.png)
 ![DATASET](fig/fragments.png)
 
+## Weights of IberianVoxel
+
+Download the weights [here](https://drive.google.com/file/d/1dMDTLZa3S_TxrhCaBSbp8T48ylR2jvpD/view?usp=sharing)
+
 ## Overview
 
 ![DATASET](fig/figura_1_300ppp.png)
