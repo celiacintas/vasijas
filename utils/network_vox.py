@@ -52,13 +52,14 @@ class _D(torch.nn.Module):
         out = self.layer6(out)
         #print(out.shape)
         return out
-    
+
 class _G_encode_decode(torch.nn.Module):
-    def __init__(self, cube_len=64, z_latent_space=64):
+    def __init__(self, cube_len=64, z_latent_space=64, z_intern_space=64):
         super(_G_encode_decode, self).__init__()
         self.leak = 0.01
         self.cube_len = cube_len
         self.z_latent_space = z_latent_space
+        self.z_intern_space = z_intern_space
 
         padd = (0,0,0)
         if self.cube_len == 32:
@@ -89,7 +90,7 @@ class _G_encode_decode(torch.nn.Module):
             #torch.nn.BatchNorm3d(self.cube_len*8),
 
         )
-        
+
         self.layer6 = torch.nn.Sequential(
             torch.nn.ConvTranspose3d(self.z_latent_space, self.cube_len*8, kernel_size=4, stride=2, bias=False, padding=padd),
             torch.nn.BatchNorm3d(self.cube_len*8),
@@ -112,14 +113,26 @@ class _G_encode_decode(torch.nn.Module):
         )
         self.layer10 = torch.nn.Sequential(
             torch.nn.ConvTranspose3d(self.cube_len, 1, kernel_size=4, stride=2, bias=False, padding=(1, 1, 1)),
-            
+
 
        )
+        self.linear_layer = torch.nn.Sequential(
+            torch.nn.Linear(self.z_intern_space, self.z_latent_space),
+            torch.nn.BatchNorm1d(self.z_latent_space),
+            torch.nn.ReLU()
+        )
+        self.normalized_layer = torch.nn.Sequential(
+            torch.nn.BatchNorm2d(self.z_latent_space),
+        )
+
+    def normalized_vector(self, z0, z1):
+        x_encode = torch.concat((z0, z1), 1)
+        return self.linear_layer(x_encode)
 
     def forward(self, x):
         x_encode = forward_encode(x)
-        x_decode = forward_decode(x_encode)
-        
+        x_decode = forward_decode(x)
+
         return x_decode
 
     def forward_encode(self, x):
@@ -129,9 +142,9 @@ class _G_encode_decode(torch.nn.Module):
         out = self.layer3(out)
         out = self.layer4(out)
         out = self.layer5(out)
-        
+
         return out.view(out_x.shape[0], -1)
-    
+
     def forward_decode(self, x):
         out = x.view(-1, self.z_latent_space, 1, 1, 1)
         out = self.layer6(out)
