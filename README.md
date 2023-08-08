@@ -59,7 +59,7 @@ pip install - r requirements.txt
 
 ```
 
-[Test generate (Notebook)](https://github.com/.ipynb)
+[Test generate (Notebook)](https://github.com/celiacintas/vasijas/blob/iberianVox/example.ipynb)
 
 
 ## Train
