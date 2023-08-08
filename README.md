@@ -1,5 +1,7 @@
 # IberianVoxel: Automatic Completion of Iberian Ceramics for Cultural Heritage Studies
 
+![DATASET](fig/teaser.jpeg)
+
 ## Abstract
 
 Accurate completion of archaeological artifacts is a critical aspect in several archaeological studies, including documentation of variations in style, inference of chronological and ethnic groups, and trading routes trends, among many others.
@@ -9,8 +11,6 @@ To overcome the challenges of manual reconstruction, reduce the materials' expos
 We generated a collection of $1001$ 3D voxelized samples and their fragmented references from Iberian wheel-made pottery profiles.
 The fragments generated are stratified into different size groups and across multiple pottery classes.
 Lastly, we provide quantitative and qualitative assessments to measure the quality of the reconstructed voxelized samples by our proposed method and archaeologists' evaluation.
-
-## Dataset
 
 ## Dataset
 
@@ -34,20 +34,9 @@ vasijas
     
 ```
 
-![DATASET](fig/figura_2_300ppp_scaled.png)
-![DATASET](fig/fragments.png)
-
 ## Weights of IberianVoxel
 
 Download the weights [here](https://drive.google.com/file/d/1dMDTLZa3S_TxrhCaBSbp8T48ylR2jvpD/view?usp=sharing)
-
-## Overview
-
-![DATASET](fig/figura_1_300ppp.png)
-
-## Results
-
-![DATASET](fig/figura_3_m_300ppp_scaled.png)
 
 ## More Papers
 
