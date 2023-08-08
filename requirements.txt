@@ -15,6 +15,7 @@ ca-certificates=2023.05.30=hca03da5_0
 certifi=2023.7.22=pypi_0
 cffi=1.15.1=pypi_0
 charset-normalizer=2.0.4=pyhd3eb1b0_0
+click=8.0.4=pypi_0
 comm=0.1.4=pyhd8ed1ab_0
 cryptography=41.0.2=pypi_0
 debugpy=1.6.7=pypi_0
@@ -97,6 +98,7 @@ readline=8.2=h1a28f6b_0
 requests=2.31.0=pypi_0
 scipy=1.10.1=pypi_0
 setuptools=68.0.0=pypi_0
+sh=1.14.2=pypi_0
 six=1.16.0=pyh6c4a22f_0
 sleef=3.5.1=h80987f9_2
 sqlite=3.41.2=h80987f9_0
