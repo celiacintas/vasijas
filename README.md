@@ -36,6 +36,52 @@ vasijas
 
 Download the weights [here](https://drive.google.com/file/d/1dMDTLZa3S_TxrhCaBSbp8T48ylR2jvpD/view?usp=sharing)
 
+## Examples 
+
+Run with Google Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1BEEtAu2ttyRV_6AvJtw7o6zVwYtUcrDt?usp=sharing)
+
+
+Or run it locally using python 3.11 and installing the dependencies:
+
+### Alternative Pip:
+
+```bash
+
+pip install - r requirements.txt
+
+```
+
+### Alternative Conda:
+
+```bash
+
+pip install - r requirements.txt
+
+```
+
+[Test generate (Notebook)](https://github.com/.ipynb)
+
+
+## Train
+
+In a terminal, execute the training script:
+
+```bash
+
+python train_net.py --nepoch 100 --device cpu
+
+```
+
+*   **nepoch:** Number of epochs.
+*   **bsize:** Batch size
+*   **lrG:** Learning rate G.
+*   **lrD:** Learning rate D.
+*   **available_device:** Type of device for train. (cpu, cuda).
+
+
+
+
+
 ## More Papers
 
 - Reconstruction of Iberian ceramic potteries using auto-encoder generative adversarial networks
