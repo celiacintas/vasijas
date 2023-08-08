@@ -55,7 +55,10 @@ pip install - r requirements.txt
 
 ```bash
 
-pip install - r requirements.txt
+conda env create -f environment.yml
+
+# Activate the new environment:
+conda activate vasija
 
 ```
 
