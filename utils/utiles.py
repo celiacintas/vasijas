@@ -28,8 +28,8 @@ def plot(voxel_matrix):
 
 def posprocessing(fake, mesh_frag):
     a_p = (mesh_frag > 0.5)
-    #a_fake = (fake[0] > np.mean(fake[0]))
-    a_fake = (fake[0] > 0.1)
+    a_fake = (fake[0] > np.mean(fake[0]))
+    #a_fake = (fake[0] > 0.1)
     a_fake = np.array(a_fake, dtype=np.int32).reshape(1, -1)
 
     diamond = ndi.generate_binary_structure(rank=3, connectivity=1)
@@ -42,7 +42,7 @@ def posprocessing(fake, mesh_frag):
 
     a_p = ndi.binary_dilation(a_p.reshape(64, 64, 64), diamond, iterations=1)
     a_fake = a_fake + _a_p
-    a_fake = (a_fake > 0.5)
+    #a_fake = (a_fake > 0.5)
     # make a little 3D diamond:
     diamond = ndi.generate_binary_structure(rank=3, connectivity=1)
     dilated = ndi.binary_erosion(
