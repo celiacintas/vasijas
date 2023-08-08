@@ -26,6 +26,28 @@ def plot(voxel_matrix):
     fig.show()
 
 
+def plot_frag(vox_pottery):
+    stts = []
+    colors = ['#ceabb2', '#d05d86', '#7e1b2f', '#c1375b', '#cdc1c3']
+    for i, frag in enumerate(np.unique(vox_pottery)[1:]):
+        vox_frag = vox_pottery.copy()
+        vox_frag[vox_pottery != frag] = 0
+        voxels = np.array(np.where(vox_frag)).T
+        x, y, z = voxels[:, 0], voxels[:, 1], voxels[:, 2]
+        # ut.plot(vox_frag)
+        scatter = go.Scatter3d(x=x, y=y, z=z,
+                               mode='markers',
+                               name='Fragment {} ({})'.format(i+1, int(frag)),
+                               marker=dict(size=5, symbol='square', color=colors[i],
+                                           line=dict(width=2, color='DarkSlateGrey',)))
+        stts.append(scatter)
+
+    fig = go.Figure(data=stts)
+    fig.update_layout()
+
+    fig.show()
+
+
 def posprocessing(fake, mesh_frag):
     a_p = (mesh_frag > 0.5)
     a_fake = (fake[0] > np.mean(fake[0]))
