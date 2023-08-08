@@ -36,10 +36,7 @@ vasijas
 
 Download the weights [here](https://drive.google.com/file/d/1dMDTLZa3S_TxrhCaBSbp8T48ylR2jvpD/view?usp=sharing)
 
-## Examples 
-
-Run with Google Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1hNTGacyl28ysMhFMm3a3XUOmSUeVju47?usp=sharing)
-
+## Examples [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1hNTGacyl28ysMhFMm3a3XUOmSUeVju47?usp=sharing)
 
 Or run it locally using python 3.11 and installing the dependencies:
 
