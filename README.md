@@ -1,5 +1,3 @@
-# IberianVoxel: Automatic Completion of Iberian Ceramics for Cultural Heritage Studies
-
 ![DATASET](fig/teaser.jpeg)
 
 ## Abstract
