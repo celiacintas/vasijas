@@ -31,6 +31,8 @@ vasijas
           └── 11
     
 ```
+[Dataset View (Notebook)](https://github.com/celiacintas/vasijas/blob/iberianVox/dataset_view.ipynb)
+
 
 ## Weights of IberianVoxel
 
