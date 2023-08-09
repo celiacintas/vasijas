@@ -13,6 +13,10 @@ Lastly, we provide quantitative and qualitative assessments to measure the quali
 ## Dataset
 
 [Download the dataset](https://drive.google.com/file/d/1EPdY6lI2DYYYVtqGVT6-GFNCxTnxBlXV/view?usp=sharing) and put in `vasijas/data`.
+
+The ceramics are classified into eleven different classes based on their shape. These classes consider the forms of the lip, neck, body, base, and handles and the relative ratios between their sizes. Nine of these classes correspond to closed pottery shapes, and two others belong to open ones. 
+
+The directory tree is:
       
 ```
 vasijas
@@ -31,6 +35,17 @@ vasijas
           └── 11
     
 ```
+
+Each file is made up of the pottery ID and the number of fragments.
+
+
+      data/(test or train)/CLASS/**POTTERY_ID**-n**NroFragments**-*.vox
+      
+      example:
+      
+      data/test/9/AL_11D-n005-t1649436904.vox
+
+
 [Dataset View (Notebook)](https://github.com/celiacintas/vasijas/blob/iberianVox/dataset_view.ipynb)
 
 
