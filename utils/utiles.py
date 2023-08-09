@@ -8,6 +8,19 @@ from scipy import ndimage as ndi
 available_device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
+def __read_vox_frag__(path, fragment_idx):
+    vox_pottery = __read_vox__(path)
+    try:
+        assert(fragment_idx in np.unique(vox_pottery))
+        vox_frag = vox_pottery.copy()
+        vox_frag[vox_pottery != fragment_idx] = 0
+        vox_frag[vox_pottery == fragment_idx] = 1
+        return vox_frag
+    except AssertionError:
+        print('fragment_idx not found. Possible fragment_idx {}'.format(
+            np.unique(vox_pottery)[1:]))
+
+
 def __read_vox__(path):
     vox = pyvox.parser.VoxParser(path).parse()
     a = vox.to_dense()
@@ -19,8 +32,8 @@ def __read_vox__(path):
 def plot(voxel_matrix):
     voxels = np.array(np.where(voxel_matrix)).T
     x, y, z = voxels[:, 0], voxels[:, 1], voxels[:, 2]
-    fig = go.Figure(data=go.Scatter3d(x=x, y=y, z=z, mode='markers', marker=dict(size=5, symbol='square', color='red', line=dict(width=2,
-                                                                                                                                 color='DarkSlateGrey',))))
+    fig = go.Figure(data=go.Scatter3d(x=x, y=y, z=z, mode='markers', marker=dict(size=5, symbol='square', color='#ceabb2', line=dict(width=2,
+                                                                                                                                     color='DarkSlateGrey',))))
     fig.update_layout()
 
     fig.show()
@@ -29,7 +42,7 @@ def plot(voxel_matrix):
 def plot_frag(vox_pottery):
     stts = []
     colors = ['#ceabb2', '#d05d86', '#7e1b2f', '#c1375b', '#cdc1c3']
-    for i, frag in enumerate(np.unique(vox_pottery)[1:]):
+    for i, frag in enumerate(np.unique(vox_pottery)[1:][::-1]):
         vox_frag = vox_pottery.copy()
         vox_frag[vox_pottery != frag] = 0
         voxels = np.array(np.where(vox_frag)).T
@@ -41,6 +54,35 @@ def plot_frag(vox_pottery):
                                marker=dict(size=5, symbol='square', color=colors[i],
                                            line=dict(width=2, color='DarkSlateGrey',)))
         stts.append(scatter)
+
+    fig = go.Figure(data=stts)
+    fig.update_layout()
+
+    fig.show()
+
+
+def plot_join(vox_1, vox_2):
+    stts = []
+    colors = ['#ceabb2', '#d05d86', '#7e1b2f', '#c1375b', '#cdc1c3']
+    voxels = np.array(np.where(vox_1)).T
+    x, y, z = voxels[:, 0], voxels[:, 1], voxels[:, 2]
+    # ut.plot(vox_frag)
+    scatter = go.Scatter3d(x=x, y=y, z=z,
+                           mode='markers',
+                           name='Fragment 1',
+                           marker=dict(size=5, symbol='square', color=colors[0],
+                                       line=dict(width=2, color='DarkSlateGrey',)))
+    stts.append(scatter)
+
+    voxels = np.array(np.where(vox_2)).T
+    x, y, z = voxels[:, 0], voxels[:, 1], voxels[:, 2]
+    # ut.plot(vox_frag)
+    scatter = go.Scatter3d(x=x, y=y, z=z,
+                           mode='markers',
+                           name='Fragment 2',
+                           marker=dict(size=5, symbol='square', color=colors[2],
+                                       line=dict(width=2, color='DarkSlateGrey',)))
+    stts.append(scatter)
 
     fig = go.Figure(data=stts)
     fig.update_layout()
