@@ -41,7 +41,8 @@ def plot(voxel_matrix):
 
 def plot_frag(vox_pottery):
     stts = []
-    colors = ['#ceabb2', '#d05d86', '#7e1b2f', '#c1375b', '#cdc1c3']
+    colors = ['#ceabb2', '#d05d86', '#7e1b2f', '#c1375b', '#cdc1c3',
+              '#ceabb2', '#d05d86', '#7e1b2f', '#c1375b', '#cdc1c3']
     for i, frag in enumerate(np.unique(vox_pottery)[1:][::-1]):
         vox_frag = vox_pottery.copy()
         vox_frag[vox_pottery != frag] = 0
@@ -63,7 +64,8 @@ def plot_frag(vox_pottery):
 
 def plot_join(vox_1, vox_2):
     stts = []
-    colors = ['#ceabb2', '#d05d86', '#7e1b2f', '#c1375b', '#cdc1c3']
+    colors = ['#ceabb2', '#d05d86', '#7e1b2f', '#c1375b', '#cdc1c3',
+              '#ceabb2', '#d05d86', '#7e1b2f', '#c1375b', '#cdc1c3']
     voxels = np.array(np.where(vox_1)).T
     x, y, z = voxels[:, 0], voxels[:, 1], voxels[:, 2]
     # ut.plot(vox_frag)
