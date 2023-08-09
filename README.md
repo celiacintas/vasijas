@@ -51,7 +51,7 @@ example: **data/test/9/AL_11D-n005-t1649436904.vox**
 
 Download the weights [here](https://drive.google.com/file/d/1dMDTLZa3S_TxrhCaBSbp8T48ylR2jvpD/view?usp=sharing)
 
-## Examples [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1hNTGacyl28ysMhFMm3a3XUOmSUeVju47?usp=sharing)
+## Dependencies 
 
 Run it locally using python 3.11 and installing the dependencies:
 
@@ -74,6 +74,10 @@ conda activate vasija
 
 ```
 
+In this repo, we use [pyvox](https://github.com/gromgull/py-vox-io) to open and write the vox files.
+
+## Examples [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1hNTGacyl28ysMhFMm3a3XUOmSUeVju47?usp=sharing)
+
 [Test generate (Notebook)](https://github.com/celiacintas/vasijas/blob/iberianVox/example.ipynb)
 
 
@@ -92,9 +96,6 @@ python train_net.py --nepoch 100 --device cpu
 *   **lrG:** Learning rate G.
 *   **lrD:** Learning rate D.
 *   **available_device:** Type of device for train. (cpu, cuda).
-
-
-
 
 
 ## More Papers
