@@ -39,11 +39,9 @@ vasijas
 Each file is made up of the pottery ID and the number of fragments.
 
 
-      data/(test or train)/CLASS/**POTTERY_ID**-n**NroFragments**-*.vox
+data/(test or train)/CLASS/**POTTERY_ID**-n**NroFragments**-*.vox
       
-      example:
-      
-      data/test/9/AL_11D-n005-t1649436904.vox
+example: **data/test/9/AL_11D-n005-t1649436904.vox**
 
 
 [Dataset View (Notebook)](https://github.com/celiacintas/vasijas/blob/iberianVox/dataset_view.ipynb)
