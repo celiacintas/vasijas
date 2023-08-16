@@ -18,7 +18,20 @@ Lastly, we provide quantitative and qualitative assessments to measure the quali
 
 ```
 
-Soon IJCAI 2023
+@inproceedings{ijcai2023p647,
+  title     = {IberianVoxel: Automatic Completion of Iberian Ceramics for Cultural Heritage Studies},
+  author    = {Navarro, Pablo and Cintas, Celia and Lucena, Manuel and Fuertes, José Manuel and Rueda, Antonio and Segura, Rafael and Ogayar-Anguita, Carlos and González-José, Rolando and Delrieux, Claudio},
+  booktitle = {Proceedings of the Thirty-Second International Joint Conference on
+               Artificial Intelligence, {IJCAI-23}},
+  publisher = {International Joint Conferences on Artificial Intelligence Organization},
+  editor    = {Edith Elkind},
+  pages     = {5833--5841},
+  year      = {2023},
+  month     = {8},
+  note      = {AI and Arts},
+  doi       = {10.24963/ijcai.2023/647},
+  url       = {https://doi.org/10.24963/ijcai.2023/647},
+}
 
 ```
 
