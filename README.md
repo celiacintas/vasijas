@@ -10,7 +10,7 @@ We generated a collection of $1001$ 3D voxelized samples and their fragmented re
 The fragments generated are stratified into different size groups and across multiple pottery classes.
 Lastly, we provide quantitative and qualitative assessments to measure the quality of the reconstructed voxelized samples by our proposed method and archaeologists' evaluation.
 
-[![DOI](https://img.shields.io/badge/DOI-10.1111/ijcai.2023-647.svg)](https://doi.org/10.24963/ijcai.2023/647)
+[![DOI](https://img.shields.io/badge/DOI-10.24963/ijcai.2023-f9f107.svg)](https://doi.org/10.24963/ijcai.2023/647)
 
 ## Dataset
 
