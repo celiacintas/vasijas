@@ -11,6 +11,7 @@ The fragments generated are stratified into different size groups and across mul
 Lastly, we provide quantitative and qualitative assessments to measure the quality of the reconstructed voxelized samples by our proposed method and archaeologists' evaluation.
 
 [![DOI](https://img.shields.io/badge/DOI-10.24963/ijcai.2023-f9f107.svg)](https://doi.org/10.24963/ijcai.2023/647)
+[![DEMO](https://img.shields.io/badge/DEMO-73ff9.svg)](https://huggingface.co/spaces/pablo1n7/iberianVoxels)
 
 ## Dataset
 
