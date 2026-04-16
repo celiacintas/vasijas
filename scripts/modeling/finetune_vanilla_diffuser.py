@@ -12,7 +12,7 @@ from peft import get_peft_model, LoraConfig, TaskType
 # Configuration
 CONFIG = {
     "model_name": "runwayml/stable-diffusion-v1-5",
-    "output_dir": "qwen_finetuned",
+    "output_dir": "vanilla_finetuned",
     "learning_rate": 1e-4,
     "batch_size": 2,
     "num_epochs": 3,
@@ -83,9 +83,9 @@ class CeramicArtifactDataset(Dataset):
                 "filename": image_path.name
             }
 
-def finetune_qwen_diffuser(
-    image_dir="/Users/celiacintas/Code/docling-example/cropped_samples/",
-    descriptions_file="all_artifacts.json",
+def finetune_vanilla_diffuser(
+    image_dir,
+    descriptions_file,
     config=CONFIG
 ):
     """Finetune diffuser model with text descriptions"""
@@ -301,9 +301,9 @@ if __name__ == "__main__":
     print("Make sure you have run: python prepare_dataset.py\n")
     
     # Finetune
-    models = finetune_qwen_diffuser(
-        image_dir="cropped_samples",
-        descriptions_file="all_artifacts.json",
+    models = finetune_vanilla_diffuser(
+        image_dir="data/cropped_artifacts",
+        descriptions_file="data/all_artifacts.json",
         config=CONFIG
     )
     

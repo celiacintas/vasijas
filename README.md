@@ -84,3 +84,65 @@ uv run python scripts/preprocessing/prepare_dataset.py
 uv run python scripts/preprocessing/prepare_dataset.py
 # (Modify the paths in the script if needed)
 ```
+
+## Modeling Scripts
+
+### Finetune Vanilla Diffuser
+
+Finetune Stable Diffusion v1.5 with LoRA on ceramic artifact images.
+
+> **Prerequisites:** Run `prepare_dataset.py` first to prepare the dataset.
+
+```bash
+uv run python scripts/modeling/finetune_vanilla_diffuser.py
+```
+
+**Configuration options in script:**
+- `model_name`: Base model (default: `runwayml/stable-diffusion-v1-5`)
+- `output_dir`: Output directory (default: `vanilla_finetuned`)
+- `learning_rate`: Training learning rate (default: `1e-4`)
+- `batch_size`: Batch size (default: `2`)
+- `num_epochs`: Number of training epochs (default: `3`)
+- `image_size`: Image resolution (default: `512`)
+- `use_lora`: Enable LoRA (default: `True`)
+- `lora_rank`: LoRA rank (default: `16`)
+
+**Output:**
+- Checkpoints saved to `vanilla_finetuned/checkpoint_epoch_N/`
+- Final model saved to `vanilla_finetuned/final/`
+
+**Examples:**
+```bash
+# Using default config
+uv run python scripts/modeling/finetune_vanilla_diffuser.py
+
+# Modify CONFIG in script for custom settings
+```
+
+### Generate from Finetuned Model
+
+Generate new ceramic artifact images using the finetuned model.
+
+```bash
+uv run python scripts/modeling/generate_from_finetuned.py
+```
+
+**How it works:**
+1. Loads the finetuned model from `vanilla_finetuned/final/`
+2. Generates images from text prompts using classifier-free guidance
+3. Saves generated images to `generated_images/`
+4. Creates a grid preview of all generated images
+
+**Arguments:**
+- `checkpoint_dir`: Path to finetuned checkpoint (default: `vanilla_finetuned/final`)
+- `num_inference_steps`: Denoising steps (default: `50`)
+- `guidance_scale`: Guidance scale for CFG (default: `7.5`)
+- `seed`: Random seed for reproducibility
+
+**Examples:**
+```bash
+# Using default paths
+uv run python scripts/modeling/generate_from_finetuned.py
+
+# Edit the prompts in the script for custom generation
+```

@@ -7,7 +7,7 @@ from transformers import CLIPTextModel, CLIPTokenizer
 from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
 from peft import PeftModel
 
-def load_finetuned_models(checkpoint_dir="qwen_finetuned/final"):
+def load_finetuned_models(checkpoint_dir="vanilla_finetuned/final"):
     """Load finetuned models from checkpoint directory"""
     
     checkpoint_path = Path(checkpoint_dir)
@@ -23,7 +23,7 @@ def load_finetuned_models(checkpoint_dir="qwen_finetuned/final"):
     if not checkpoint_path.exists():
         print(f"❌ Checkpoint directory not found: {checkpoint_path}")
         print(f"Available checkpoints:")
-        for checkpoint in Path("qwen_finetuned").glob("checkpoint_*"):
+        for checkpoint in Path("vanilla_finetuned").glob("checkpoint_*"):
             print(f"  - {checkpoint.name}")
         return None
     
@@ -265,11 +265,11 @@ if __name__ == "__main__":
     
     # Load finetuned models
     print("Loading finetuned models...\n")
-    models = load_finetuned_models(checkpoint_dir="qwen_finetuned/final")
+    models = load_finetuned_models(checkpoint_dir="vanilla_finetuned/final")
     
     if models is None:
         print("\nTrying to find latest checkpoint...")
-        checkpoints = sorted(Path("qwen_finetuned").glob("checkpoint_*"))
+        checkpoints = sorted(Path("vanilla_finetuned").glob("checkpoint_*"))
         if checkpoints:
             latest = checkpoints[-1]
             print(f"Found: {latest}")
