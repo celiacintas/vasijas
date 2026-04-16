@@ -1,0 +1,11 @@
+[project]
+name = "vasijas"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "diffusers>=0.37.1",
+    "docling>=2.88.0",
+    "peft>=0.19.0",
+]
