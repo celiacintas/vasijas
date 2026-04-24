@@ -61,7 +61,7 @@ def create_descriptions_jsonl(
             # Create JSON entry
             entry = {
                 "filename": image_file,
-                "image_path": str(image_dir / image_file),
+                "image_path": str((image_dir / image_file).absolute()),
                 "description": description
             }
             
