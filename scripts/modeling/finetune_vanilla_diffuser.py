@@ -15,11 +15,14 @@ CONFIG = {
     "output_dir": "vanilla_finetuned",
     "learning_rate": 1e-4,
     "batch_size": 2,
-    "num_epochs": 3,
+    "num_epochs": 5,
     "image_size": 512,
     "use_lora": True,
     "lora_rank": 16,
+    "gpu": 0,
 }
+
+torch.cuda.set_device(CONFIG["gpu"])
 
 class CeramicArtifactDataset(Dataset):
     """Dataset for ceramic artifacts with descriptions"""
@@ -94,7 +97,7 @@ def finetune_vanilla_diffuser(
     print("LOADING MODELS")
     print("="*70)
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:{CONFIG['gpu']}" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
     
     # Load tokenizer and text encoder

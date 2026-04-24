@@ -286,7 +286,7 @@ if __name__ == "__main__":
         "ceramic artifact with red decorative patterns and horizontal stripes",
         "pottery vessel with scalloped borders and geometric designs",
         "ceramic bowl with intricate red paint patterns and curved shapes",
-        #"pottery fragment with red and white decorative motifs",
+        "pottery fragment with red and white decorative motifs",
         "ceramic artifact with feathered design patterns in red",
     ]
     

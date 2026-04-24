@@ -7,5 +7,6 @@ requires-python = ">=3.12"
 dependencies = [
     "diffusers>=0.37.1",
     "docling>=2.88.0",
+    "gdown>=6.0.0",
     "peft>=0.19.0",
 ]
