@@ -22,7 +22,7 @@ CONFIG = {
     "lora_rank": 16,
     "gpu": 0,
     "instance_prompt": "a ceramic artifact",
-    "max_train_steps": 500,
+    "max_train_steps": 100,
     "gradient_accumulation_steps": 2,
 }
 
