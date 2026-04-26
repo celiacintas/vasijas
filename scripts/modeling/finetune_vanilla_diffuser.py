@@ -215,7 +215,7 @@ def finetune_vanilla_diffuser(
                 )[0]
                 
                 # Encode images to latent space
-                latents = vae.encode(images).latent_dist.sample()
+                latents = vae.encode(images.half()).latent_dist.sample()
                 latents = latents * 0.18215  # VAE scaling factor
             
             # Sample noise and timesteps
