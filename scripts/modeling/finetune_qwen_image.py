@@ -16,7 +16,7 @@ CONFIG = {
     "model_name": "Qwen/Qwen-Image",
     "output_dir": "qwen_finetuned",
     "learning_rate": 2e-4,
-    "batch_size": 26,
+    "batch_size": 12,
     "num_epochs": 20,
     "image_size": 1024,
     "lora_rank": 16,
