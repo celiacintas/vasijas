@@ -105,7 +105,7 @@ def finetune_qwen_image(
     device = torch.device(f"cuda:{config['gpu']}" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
-    weight_dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
+    weight_dtype = torch.float16 if device.type == "cuda" else torch.float32
     print(f"Dtype: {weight_dtype}")
 
     print("\n" + "="*70)
@@ -227,8 +227,8 @@ def finetune_qwen_image(
             ).sample
 
             loss = torch.nn.functional.mse_loss(
-                model_pred.float(),
-                noise.float(),
+                model_pred,
+                noise,
                 reduction="mean"
             )
 
