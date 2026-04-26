@@ -16,14 +16,14 @@ CONFIG = {
     "model_name": "Qwen/Qwen-Image",
     "output_dir": "qwen_finetuned",
     "learning_rate": 2e-4,
-    "batch_size": 2,
+    "batch_size": 1,
     "num_epochs": 20,
-    "image_size": 512,
+    "image_size": 256,
     "lora_rank": 16,
     "gpu": 0,
     "instance_prompt": "a ceramic artifact",
     "max_train_steps": 500,
-    "gradient_accumulation_steps": 4,
+    "gradient_accumulation_steps": 2,
 }
 
 
