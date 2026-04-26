@@ -257,8 +257,8 @@ def display_image_grid(images, cols=2):
             axes[idx].axis('off')
         
         plt.tight_layout()
-        plt.savefig("generated_images_grid.png", dpi=100, bbox_inches='tight')
-        print("\n✓ Grid saved to generated_images_grid.png")
+        plt.savefig(output_path / "generated_images_grid.png", dpi=100, bbox_inches='tight')
+        print("\n✓ Grid saved to", output_path / "generated_images_grid.png")
         plt.show()
         
     except ImportError:
