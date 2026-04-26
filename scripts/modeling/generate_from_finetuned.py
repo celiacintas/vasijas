@@ -37,7 +37,8 @@ def load_finetuned_models(checkpoint_dir="vanilla_finetuned/final"):
         # Load text encoder
         print("Loading text encoder...")
         text_encoder = CLIPTextModel.from_pretrained(
-            str(checkpoint_path / "text_encoder")
+            str(checkpoint_path / "text_encoder"),
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
         )
         text_encoder = text_encoder.to(device)
         text_encoder.eval()
@@ -45,7 +46,8 @@ def load_finetuned_models(checkpoint_dir="vanilla_finetuned/final"):
         # Load VAE
         print("Loading VAE...")
         vae = AutoencoderKL.from_pretrained(
-            str(checkpoint_path / "vae")
+            str(checkpoint_path / "vae"),
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
         )
         vae = vae.to(device)
         vae.eval()
@@ -64,7 +66,8 @@ def load_finetuned_models(checkpoint_dir="vanilla_finetuned/final"):
             # Load base UNet from pretrained
             base_unet = UNet2DConditionModel.from_pretrained(
                 "runwayml/stable-diffusion-v1-5",
-                subfolder="unet"
+                subfolder="unet",
+                torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
             )
             
             # Load LoRA weights
@@ -73,7 +76,8 @@ def load_finetuned_models(checkpoint_dir="vanilla_finetuned/final"):
         else:
             # Load full UNet
             unet = UNet2DConditionModel.from_pretrained(
-                str(checkpoint_path / "unet")
+                str(checkpoint_path / "unet"),
+                torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
             )
             print("  ✓ Loaded full UNet")
         
