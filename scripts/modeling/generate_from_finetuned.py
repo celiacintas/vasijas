@@ -299,7 +299,7 @@ if __name__ == "__main__":
         test_prompts,
         models,
         num_inference_steps=50,
-        guidance_scale=7.5,
+        guidance_scale=10.5, #
         seed=42
     )
     
