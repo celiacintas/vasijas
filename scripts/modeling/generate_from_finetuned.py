@@ -287,11 +287,11 @@ if __name__ == "__main__":
     
     # Example prompts from ceramic artifacts
     test_prompts = [
-        "ceramic artifact with red decorative patterns and horizontal stripes",
-        "pottery vessel with scalloped borders and geometric designs",
-        "ceramic bowl with intricate red paint patterns and curved shapes",
-        "pottery fragment with red and white decorative motifs",
-        "ceramic artifact with feathered design patterns in red",
+        "iberian ceramic artifact with red decorative patterns and horizontal stripes",
+        "iberian pottery vessel with scalloped borders and geometric designs",
+        "iberian ceramic bowl with intricate red paint patterns and curved shapes",
+        "iberian pottery fragment with red and white decorative motifs",
+        "iberian ceramic artifact with feathered design patterns in red",
     ]
     
     # Generate images
