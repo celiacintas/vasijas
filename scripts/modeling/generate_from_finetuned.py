@@ -287,11 +287,12 @@ if __name__ == "__main__":
     
     # Example prompts from ceramic artifacts
     test_prompts = [
-        "iberian ceramic artifact with red decorative patterns and horizontal stripes",
-        "iberian pottery vessel with scalloped borders and geometric designs",
-        "iberian ceramic bowl with intricate red paint patterns and curved shapes",
-        "iberian pottery fragment with red and white decorative motifs",
-        "iberian ceramic artifact with feathered design patterns in red",
+        "Draw a technical lateral view of an iberian pottery with Horizontal striped design with alternating red and white bands. Linear, repetitive geometric pattern creating a rhythmic visual effect. Smooth surface with painted decoration."
+        #"iberian ceramic artifact with red decorative patterns and horizontal stripes",
+        #"iberian pottery vessel with scalloped borders and geometric designs",
+        #"iberian ceramic bowl with intricate red paint patterns and curved shapes",
+        #"iberian pottery fragment with red and white decorative motifs",
+        #"iberian ceramic artifact with feathered design patterns in red",
     ]
     
     # Generate images
@@ -299,7 +300,7 @@ if __name__ == "__main__":
         test_prompts,
         models,
         num_inference_steps=50,
-        guidance_scale=10.5, #
+        guidance_scale=2.5, # 7.5
         seed=42
     )
     
