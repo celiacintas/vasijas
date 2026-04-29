@@ -11,11 +11,11 @@ from peft import get_peft_model, LoraConfig, TaskType
 
 # Configuration
 CONFIG = {
-    "model_name": "runwayml/stable-diffusion-v1-5",
-    "output_dir": "vanilla_finetuned",
+    "model_name": "OFA-Sys/small-stable-diffusion-v0", #"runwayml/stable-diffusion-v1-5",
+    "output_dir": "small_stable_finetuned",
     "learning_rate": 1e-4,
     "batch_size": 26,
-    "num_epochs": 30,
+    "num_epochs": 100,
     "image_size": 512,
     "use_lora": True,
     "lora_rank": 16,
