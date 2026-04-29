@@ -14,7 +14,7 @@ def download_folder(url_or_id: str, output_dir: str = ".", cookie_file: str = No
         output_dir: Local directory to save files to
         cookie_file: Path to cookies.txt for authenticated downloads
     """
-    cmd = ["gdown", "--folder", "--remaining-ok", "--output", output_dir, url_or_id]
+    cmd = ["gdown", "--folder", "--output", output_dir, url_or_id]
     if cookie_file and os.path.exists(cookie_file):
         cmd.extend(["--cookies", cookie_file])
     subprocess.run(cmd, check=True)
