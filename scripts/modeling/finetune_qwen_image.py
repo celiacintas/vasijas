@@ -113,6 +113,25 @@ def finetune_qwen_image(
     print("="*70)
 
     print("Loading transformer...")
+    from transformers import PretrainedConfig
+    import warnings
+
+    config_path = Path(config["model_name"]) / "transformer"
+    if config_path.exists():
+        config_file = config_path / "config.json"
+    else:
+        from huggingface_hub import hf_hub_download
+        config_file = hf_hub_download(config["model_name"], "transformer/config.json")
+
+    with open(config_file, 'r') as f:
+        transformer_config = json.load(f)
+
+    if 'pooled_projection_dim' in transformer_config:
+        del transformer_config['pooled_projection_dim']
+        with open(config_file, 'w') as f:
+            json.dump(transformer_config, f, indent=2)
+        warnings.warn("Removed 'pooled_projection_dim' from transformer config.json")
+
     transformer = QwenImageTransformer2DModel.from_pretrained(
         config["model_name"],
         subfolder="transformer",
