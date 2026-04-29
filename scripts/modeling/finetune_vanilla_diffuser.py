@@ -11,8 +11,9 @@ from peft import get_peft_model, LoraConfig, TaskType
 
 # Configuration
 CONFIG = {
-    "model_name": "OFA-Sys/small-stable-diffusion-v0", #"runwayml/stable-diffusion-v1-5",
-    "output_dir": "small_stable_finetuned",
+    "model_name": "runwayml/stable-diffusion-v1-5",
+    #"OFA-Sys/small-stable-diffusion-v0", #
+    "output_dir": "vanilla_finetuned",
     "learning_rate": 1e-4,
     "batch_size": 26,
     "num_epochs": 100,
