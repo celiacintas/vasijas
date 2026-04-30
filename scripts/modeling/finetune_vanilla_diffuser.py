@@ -19,12 +19,14 @@ CONFIG = {
     #"OFA-Sys/small-stable-diffusion-v0", #
     "output_dir": "vanilla_finetuned",
     "learning_rate": 1e-5,
-    "batch_size": 32,
-    "num_epochs": 4,
-    "image_size": 512,
+    "batch_size": 16,
+    "num_epochs": 5,
+    "image_size": 256,
     "use_lora": True,
     "lora_rank": 16,
     "gpu": 0,
+    "grad_accum": 2,
+    "steps_per_epoch": None,
 }
 
 torch.cuda.set_device(CONFIG["gpu"])
@@ -217,10 +219,13 @@ def finetune_vanilla_diffuser(
     for epoch in range(config["num_epochs"]):
         print(f"\n[Epoch {epoch + 1}/{config['num_epochs']}]")
         
-        progress_bar = tqdm(dataloader, desc="Training")
+        steps_per_epoch = config.get("steps_per_epoch") or len(dataloader)
+        progress_bar = tqdm(dataloader, desc="Training", total=steps_per_epoch)
         total_loss = 0
         
         for batch_idx, batch in enumerate(progress_bar):
+            if batch_idx >= steps_per_epoch:
+                break
             # Move to device
             images = batch["image"].to(device)
             texts = batch["text"]
@@ -263,18 +268,26 @@ def finetune_vanilla_diffuser(
             
             # Calculate loss
             loss = F.mse_loss(noise_pred, noise)
+            loss = loss / config["grad_accum"]
             
             # Backward pass
-            optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(unet.parameters(), 1.0)
-            optimizer.step()
             
-            total_loss += loss.item()
+            if (batch_idx + 1) % config["grad_accum"] == 0:
+                torch.nn.utils.clip_grad_norm_(unet.parameters(), 1.0)
+                optimizer.step()
+                optimizer.zero_grad()
+            
+            total_loss += loss.item() * config["grad_accum"]
             progress_bar.set_postfix({
-                "loss": f"{loss.item():.4f}",
+                "loss": f"{loss.item() * config['grad_accum']:.4f}",
                 "avg_loss": f"{total_loss / (batch_idx + 1):.4f}"
             })
+        
+        if len(dataloader) % config["grad_accum"] != 0:
+            torch.nn.utils.clip_grad_norm_(unet.parameters(), 1.0)
+            optimizer.step()
+            optimizer.zero_grad()
         
         avg_loss = total_loss / len(dataloader)
         epoch_losses.append(avg_loss)
@@ -335,10 +348,16 @@ if __name__ == "__main__":
                         help="Name of the model output folder (default: vanilla_finetuned)")
     parser.add_argument("--model-name", type=str, default=CONFIG["model_name"],
                         help="Base model name or path (default: runwayml/stable-diffusion-v1-5)")
+    parser.add_argument("--grad-accum", type=int, default=CONFIG["grad_accum"],
+                        help="Gradient accumulation steps (default: 2)")
+    parser.add_argument("--steps-per-epoch", type=int, default=None,
+                        help="Limit training steps per epoch (default: all batches)")
     args = parser.parse_args()
     
     CONFIG["output_dir"] = args.output_dir
     CONFIG["model_name"] = args.model_name
+    CONFIG["grad_accum"] = args.grad_accum
+    CONFIG["steps_per_epoch"] = args.steps_per_epoch
     
     # Prepare dataset first
     print("Make sure you have run: python prepare_dataset.py\n")
