@@ -1,3 +1,4 @@
+import argparse
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
@@ -328,6 +329,16 @@ def finetune_vanilla_diffuser(
 # Usage
 if __name__ == "__main__":
     import numpy as np
+    
+    parser = argparse.ArgumentParser(description="Finetune vanilla diffuser model")
+    parser.add_argument("--output-dir", type=str, default=CONFIG["output_dir"],
+                        help="Name of the model output folder (default: vanilla_finetuned)")
+    parser.add_argument("--model-name", type=str, default=CONFIG["model_name"],
+                        help="Base model name or path (default: runwayml/stable-diffusion-v1-5)")
+    args = parser.parse_args()
+    
+    CONFIG["output_dir"] = args.output_dir
+    CONFIG["model_name"] = args.model_name
     
     # Prepare dataset first
     print("Make sure you have run: python prepare_dataset.py\n")
