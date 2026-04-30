@@ -6,6 +6,8 @@ from tqdm import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
 from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
 from peft import PeftModel
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 def load_finetuned_models(checkpoint_dir="vanilla_finetuned/final"):
     """Load finetuned models from checkpoint directory"""
@@ -235,37 +237,36 @@ def display_image_grid(images, cols=2,  output_dir="generated_images"):
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
-    try:
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as mpatches
+
+    
+    
+    rows = (len(images) + cols - 1) // cols
+    fig, axes = plt.subplots(rows, cols, figsize=(15, 5*rows))
+    
+    if rows == 1 and cols == 1:
+        axes = [axes]
+    elif rows == 1:
+        axes = axes.flatten()
+    else:
+        axes = axes.flatten()
+    
+    for idx, (prompt, image) in enumerate(images):
+        ax = axes[idx]
+        ax.imshow(image)
+        ax.set_title(f"{idx+1}. {prompt}", fontsize=10, wrap=True)
+        ax.axis('off')
+    
+    # Hide extra subplots
+    for idx in range(len(images), len(axes)):
+        axes[idx].axis('off')
+    
+    plt.tight_layout()
+    plt.savefig(output_path / "generated_images_grid.png", dpi=100, bbox_inches='tight')
+    print("\n✓ Grid saved to", output_path / "generated_images_grid.png")
+    #plt.show()
         
-        rows = (len(images) + cols - 1) // cols
-        fig, axes = plt.subplots(rows, cols, figsize=(15, 5*rows))
-        
-        if rows == 1 and cols == 1:
-            axes = [axes]
-        elif rows == 1:
-            axes = axes.flatten()
-        else:
-            axes = axes.flatten()
-        
-        for idx, (prompt, image) in enumerate(images):
-            ax = axes[idx]
-            ax.imshow(image)
-            ax.set_title(f"{idx+1}. {prompt}", fontsize=10, wrap=True)
-            ax.axis('off')
-        
-        # Hide extra subplots
-        for idx in range(len(images), len(axes)):
-            axes[idx].axis('off')
-        
-        plt.tight_layout()
-        plt.savefig(output_path / "generated_images_grid.png", dpi=100, bbox_inches='tight')
-        print("\n✓ Grid saved to", output_path / "generated_images_grid.png")
-        plt.show()
-        
-    except ImportError:
-        print("Matplotlib not available for display")
+    #except ImportError:
+    #    print("Matplotlib not available for display")
 
 # Main execution
 if __name__ == "__main__":
