@@ -14,9 +14,9 @@ CONFIG = {
     "model_name": "runwayml/stable-diffusion-v1-5",
     #"OFA-Sys/small-stable-diffusion-v0", #
     "output_dir": "vanilla_finetuned",
-    "learning_rate": 1e-4,
+    "learning_rate": 1e-5,
     "batch_size": 26,
-    "num_epochs": 100,
+    "num_epochs": 5,
     "image_size": 512,
     "use_lora": True,
     "lora_rank": 16,
@@ -72,6 +72,7 @@ class CeramicArtifactDataset(Dataset):
                 image_path.name,
                 "ceramic artifact with decorative patterns"
             )
+            print(description)
             
             return {
                 "image": image_array,
