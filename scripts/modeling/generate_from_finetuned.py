@@ -291,7 +291,7 @@ if __name__ == "__main__":
     
     # Example prompts from ceramic artifacts
     test_prompts = [
-        "Draw a profile view of an iberian pottery with Horizontal striped design with alternating red and white bands. Linear, repetitive geometric pattern creating a rhythmic visual effect. Smooth surface with painted decoration.",
+        "Draw a profile view of an iberian pottery with Horizontal striped design with alternating red and white bands only at the top and bottom. Smooth surface with painted decoration.",
         "Draw a profile view of an iberian bowl with Horizontal striped design with alternating red and white bands. Linear, repetitive geometric pattern creating a rhythmic visual effect. Smooth surface with painted decoration."
         
         #"iberian ceramic artifact with red decorative patterns and horizontal stripes",
