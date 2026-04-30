@@ -5,6 +5,9 @@ from pathlib import Path
 from PIL import Image
 import json
 from tqdm import tqdm
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 from transformers import CLIPTextModel, CLIPTokenizer
 from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
 from peft import get_peft_model, LoraConfig, TaskType
@@ -87,6 +90,22 @@ class CeramicArtifactDataset(Dataset):
                 "text": "ceramic artifact",
                 "filename": image_path.name
             }
+
+def save_loss_plot(losses, output_dir):
+    """Save training loss as a line plot."""
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, len(losses) + 1), losses, marker="o", linewidth=2, markersize=8)
+    plt.xlabel("Epoch", fontsize=12)
+    plt.ylabel("Training Loss", fontsize=12)
+    plt.title("Training Loss Over Time", fontsize=14)
+    plt.grid(True, alpha=0.3)
+    plt.xticks(range(1, len(losses) + 1))
+    
+    output_path = Path(output_dir) / "training_loss.png"
+    plt.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"Training loss plot saved to {output_path}")
+
 
 def finetune_vanilla_diffuser(
     image_dir,
@@ -192,6 +211,8 @@ def finetune_vanilla_diffuser(
     
     unet.train()
     
+    epoch_losses = []
+    
     for epoch in range(config["num_epochs"]):
         print(f"\n[Epoch {epoch + 1}/{config['num_epochs']}]")
         
@@ -254,6 +275,10 @@ def finetune_vanilla_diffuser(
                 "avg_loss": f"{total_loss / (batch_idx + 1):.4f}"
             })
         
+        avg_loss = total_loss / len(dataloader)
+        epoch_losses.append(avg_loss)
+        print(f"Epoch {epoch + 1} average loss: {avg_loss:.4f}")
+        
         # Save checkpoint
         output_path = Path(config["output_dir"]) / f"checkpoint_epoch_{epoch + 1}"
         output_path.mkdir(parents=True, exist_ok=True)
@@ -286,6 +311,8 @@ def finetune_vanilla_diffuser(
     noise_scheduler.save_pretrained(str(final_path / "scheduler"))
     vae.save_pretrained(str(final_path / "vae"))
     text_encoder.save_pretrained(str(final_path / "text_encoder"))
+    
+    save_loss_plot(epoch_losses, config["output_dir"])
     
     print(f"\n✓ Finetuning complete! Model saved to {final_path}")
     
