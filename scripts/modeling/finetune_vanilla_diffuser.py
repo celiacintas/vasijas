@@ -72,7 +72,7 @@ class CeramicArtifactDataset(Dataset):
                 image_path.name,
                 "ceramic artifact with decorative patterns"
             )
-            print(description)
+            #print(description)
             
             return {
                 "image": image_array,
