@@ -229,8 +229,11 @@ def save_generated_images(images, output_dir="generated_images"):
     print(f"\n✓ All images saved to {output_path}")
     return output_path
 
-def display_image_grid(images, cols=2):
+def display_image_grid(images, cols=2,  output_dir="generated_images"):
     """Display generated images in a grid"""
+    
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
     
     try:
         import matplotlib.pyplot as plt
