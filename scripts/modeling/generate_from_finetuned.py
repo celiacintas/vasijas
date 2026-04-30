@@ -1,3 +1,4 @@
+import argparse
 import torch
 import torch.nn.functional as F
 from pathlib import Path
@@ -209,7 +210,7 @@ def generate_images(
     
     return generated_images
 
-def save_generated_images(images, output_dir="generated_images"):
+def save_generated_images(images, output_dir="generated_images", prefix=""):
     """Save generated images to directory"""
     
     output_path = Path(output_dir)
@@ -220,7 +221,7 @@ def save_generated_images(images, output_dir="generated_images"):
     print("="*70)
     
     for idx, (prompt, image) in enumerate(images, 1):
-        filename = f"generated_{idx:02d}.png"
+        filename = f"{prefix}generated_{idx:02d}.png"
         filepath = output_path / filename
         image.save(filepath)
         
@@ -231,13 +232,12 @@ def save_generated_images(images, output_dir="generated_images"):
     print(f"\n✓ All images saved to {output_path}")
     return output_path
 
-def display_image_grid(images, cols=2,  output_dir="generated_images"):
+def display_image_grid(images, cols=2, output_dir="generated_images", prefix=""):
     """Display generated images in a grid"""
     
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
-
     
     
     rows = (len(images) + cols - 1) // cols
@@ -261,8 +261,8 @@ def display_image_grid(images, cols=2,  output_dir="generated_images"):
         axes[idx].axis('off')
     
     plt.tight_layout()
-    plt.savefig(output_path / "generated_images_grid.png", dpi=100, bbox_inches='tight')
-    print("\n✓ Grid saved to", output_path / "generated_images_grid.png")
+    plt.savefig(output_path / f"{prefix}generated_images_grid.png", dpi=100, bbox_inches='tight')
+    print("\n✓ Grid saved to", output_path / f"{prefix}generated_images_grid.png")
     #plt.show()
         
     #except ImportError:
@@ -270,14 +270,20 @@ def display_image_grid(images, cols=2,  output_dir="generated_images"):
 
 # Main execution
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate images from finetuned diffuser model")
+    parser.add_argument("--checkpoint-dir", type=str, default="vanilla_finetuned/final",
+                        help="Path to checkpoint directory (default: vanilla_finetuned/final)")
+    args = parser.parse_args()
+    
+    prefix = Path(args.checkpoint_dir).parent.name.replace("_finetuned", "") + "_"
     
     # Load finetuned models
     print("Loading finetuned models...\n")
-    models = load_finetuned_models(checkpoint_dir="vanilla_finetuned/final")
+    models = load_finetuned_models(checkpoint_dir=args.checkpoint_dir)
     
     if models is None:
         print("\nTrying to find latest checkpoint...")
-        checkpoints = sorted(Path("vanilla_finetuned").glob("checkpoint_*"))
+        checkpoints = sorted(Path(args.checkpoint_dir).parent.glob("checkpoint_*"))
         if checkpoints:
             latest = checkpoints[-1]
             print(f"Found: {latest}")
@@ -291,14 +297,13 @@ if __name__ == "__main__":
     
     # Example prompts from ceramic artifacts
     test_prompts = [
-        "Draw a profile view of an iberian pottery with Horizontal striped design with alternating red and white bands only at the top and bottom. Smooth surface with painted decoration.",
-        "Draw a profile view of an iberian bowl with Horizontal striped design with alternating red and white bands. Linear, repetitive geometric pattern creating a rhythmic visual effect. Smooth surface with painted decoration."
-        
-        #"iberian ceramic artifact with red decorative patterns and horizontal stripes",
-        #"iberian pottery vessel with scalloped borders and geometric designs",
-        #"iberian ceramic bowl with intricate red paint patterns and curved shapes",
-        #"iberian pottery fragment with red and white decorative motifs",
-        #"iberian ceramic artifact with feathered design patterns in red",
+        #"Draw a profile view of an iberian pottery with Horizontal striped design with alternating red and white bands only at the top and bottom. Smooth surface with painted decoration.",
+        "Draw a profile view of an iberian bowl with Horizontal striped design with alternating red and white bands. Linear, repetitive geometric pattern creating a rhythmic visual effect. Smooth surface with painted decoration.",
+        "iberian ceramic artifact with red decorative patterns and horizontal stripes",
+        "iberian pottery vessel with scalloped borders and geometric designs",
+        "iberian ceramic bowl with intricate red paint patterns and curved shapes",
+        "iberian pottery fragment with red and white decorative motifs",
+        "iberian ceramic artifact with feathered design patterns in red",
     ]
     
     # Generate images
@@ -312,10 +317,10 @@ if __name__ == "__main__":
     
     if generated_images:
         # Save images
-        output_dir = save_generated_images(generated_images)
+        output_dir = save_generated_images(generated_images, prefix=prefix)
         
         # Display grid
-        display_image_grid(generated_images, cols=2)
+        display_image_grid(generated_images, cols=2, prefix=prefix)
         
         # Create summary
         print("\n" + "="*70)
@@ -323,4 +328,4 @@ if __name__ == "__main__":
         print("="*70)
         print(f"Total images generated: {len(generated_images)}")
         print(f"Images saved to: {output_dir}")
-        print(f"Grid preview: generated_images_grid.png")
+        print(f"Grid preview: {prefix}generated_images_grid.png")
