@@ -17,9 +17,9 @@ CONFIG = {
     "model_name": "runwayml/stable-diffusion-v1-5",
     #"OFA-Sys/small-stable-diffusion-v0", #
     "output_dir": "vanilla_finetuned",
-    "learning_rate": 1e-6,
-    "batch_size": 26,
-    "num_epochs": 10,
+    "learning_rate": 1e-5,
+    "batch_size": 32,
+    "num_epochs": 4,
     "image_size": 512,
     "use_lora": True,
     "lora_rank": 16,
