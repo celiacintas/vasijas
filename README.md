@@ -89,60 +89,81 @@ uv run python scripts/preprocessing/prepare_dataset.py
 
 ### Finetune Vanilla Diffuser
 
-Finetune Stable Diffusion v1.5 with LoRA on ceramic artifact images.
+Finetune Stable Diffusion v1.5 with LoRA on ceramic artifact images. Splits data into train/test sets and evaluates on test set each epoch.
 
 > **Prerequisites:** Run `prepare_dataset.py` first to prepare the dataset.
 
 ```bash
-uv run python scripts/modeling/finetune_vanilla_diffuser.py
+uv run python scripts/modeling/finetune_vanilla_diffuser.py --output-dir my_finetuned_model
 ```
 
-**Configuration options in script:**
-- `model_name`: Base model (default: `runwayml/stable-diffusion-v1-5`)
-- `output_dir`: Output directory (default: `vanilla_finetuned`)
-- `learning_rate`: Training learning rate (default: `1e-4`)
-- `batch_size`: Batch size (default: `2`)
-- `num_epochs`: Number of training epochs (default: `3`)
-- `image_size`: Image resolution (default: `512`)
-- `use_lora`: Enable LoRA (default: `True`)
-- `lora_rank`: LoRA rank (default: `16`)
+**CLI Arguments:**
+- `--output-dir`: Name of the model output folder (default: `vanilla_finetuned`)
+- `--model-name`: Base model name or HuggingFace path (default: `runwayml/stable-diffusion-v1-5`)
+- `--grad-accum`: Gradient accumulation steps (default: `2`)
+- `--steps-per-epoch`: Limit training steps per epoch; `None` for all batches (default: `None`)
+- `--train-ratio`: Ratio of data for training (default: `0.8`)
 
-**Output:**
-- Checkpoints saved to `vanilla_finetuned/checkpoint_epoch_N/`
-- Final model saved to `vanilla_finetuned/final/`
+**Configuration defaults in script (edit directly for non-CLI params):**
+- `learning_rate`: `1e-5`
+- `batch_size`: `16`
+- `num_epochs`: `5`
+- `image_size`: `256`
+- `use_lora`: `True`
+- `lora_rank`: `64`
+- `gpu`: `0`
 
 **Examples:**
 ```bash
-# Using default config
+# Using all defaults
 uv run python scripts/modeling/finetune_vanilla_diffuser.py
 
-# Modify CONFIG in script for custom settings
+# Custom output and model
+uv run python scripts/modeling/finetune_vanilla_diffuser.py --output-dir sd21_finetuned --model-name stabilityai/stable-diffusion-2-1
+
+# Quick test run (10 steps per epoch, 4 steps gradient accum)
+uv run python scripts/modeling/finetune_vanilla_diffuser.py --steps-per-epoch 10 --grad-accum 4
+
+# Use 90% of data for training
+uv run python scripts/modeling/finetune_vanilla_diffuser.py --train-ratio 0.9
 ```
+
+**Output:**
+- Checkpoints saved to `<output_dir>/checkpoint_epoch_N/`
+- Final model saved to `<output_dir>/final/`
+- Training loss plot saved to `<output_dir>/training_loss.png`
 
 ### Generate from Finetuned Model
 
-Generate new ceramic artifact images using the finetuned model.
+Generate new ceramic artifact images using a finetuned model or any base Stable Diffusion model from HuggingFace. Prompts are sampled from the test split of the dataset.
 
 ```bash
 uv run python scripts/modeling/generate_from_finetuned.py
 ```
 
-**How it works:**
-1. Loads the finetuned model from `vanilla_finetuned/final/`
-2. Generates images from text prompts using classifier-free guidance
-3. Saves generated images to `generated_images/`
-4. Creates a grid preview of all generated images
-
-**Arguments:**
-- `checkpoint_dir`: Path to finetuned checkpoint (default: `vanilla_finetuned/final`)
-- `num_inference_steps`: Denoising steps (default: `50`)
-- `guidance_scale`: Guidance scale for CFG (default: `7.5`)
-- `seed`: Random seed for reproducibility
+**CLI Arguments:**
+- `--checkpoint-dir`: Path to finetuned checkpoint directory. If `None`, loads base model from HuggingFace (default: `None`)
+- `--model-name`: Base model name from HuggingFace (default: `runwayml/stable-diffusion-v1-5`)
+- `--image-dir`: Path to image directory for loading test descriptions (default: `data/cropped_artifacts`)
+- `--descriptions-file`: Path to descriptions JSON file (default: `data/all_artifacts.json`)
+- `--num-prompts`: Number of test prompts to sample (default: `6`)
 
 **Examples:**
 ```bash
-# Using default paths
-uv run python scripts/modeling/generate_from_finetuned.py
+# Generate from finetuned model
+uv run python scripts/modeling/generate_from_finetuned.py --checkpoint-dir vanilla_finetuned/final
 
-# Edit the prompts in the script for custom generation
+# Generate from base HuggingFace model (no finetuning)
+uv run python scripts/modeling/generate_from_finetuned.py --model-name runwayml/stable-diffusion-v1-5
+
+# Use a different checkpoint with more prompts
+uv run python scripts/modeling/generate_from_finetuned.py --checkpoint-dir small_finetuned/final --num-prompts 12
+
+# Custom data paths
+uv run python scripts/modeling/generate_from_finetuned.py --checkpoint-dir vanilla_finetuned/final --image-dir data/my_artifacts --descriptions-file data/my_artifacts.json
 ```
+
+**Output:**
+- Individual images saved to `generated_images/<prefix>generated_01.png`, etc.
+- Grid preview saved to `generated_images/<prefix>generated_images_grid.png`
+- The `<prefix>` is derived from the checkpoint directory name (e.g., `vanilla_`, `small_`) or the base model name.

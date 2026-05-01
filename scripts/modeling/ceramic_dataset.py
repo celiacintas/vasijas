@@ -61,6 +61,32 @@ class CeramicArtifactDataset(Dataset):
             }
 
 
+def get_test_descriptions(image_dir, descriptions_file, train_ratio=0.8, seed=42, n=6):
+    """Get n sample descriptions from the test split"""
+    import random
+    
+    full_dataset = CeramicArtifactDataset(image_dir, descriptions_file)
+    
+    train_size = int(train_ratio * len(full_dataset))
+    test_size = len(full_dataset) - train_size
+    
+    generator = torch.Generator().manual_seed(seed)
+    _, test_dataset = random_split(
+        full_dataset,
+        [train_size, test_size],
+        generator=generator
+    )
+    
+    test_descriptions = []
+    for idx in range(len(test_dataset)):
+        sample = test_dataset[idx]
+        test_descriptions.append(sample["text"])
+    
+    random.seed(seed)
+    n = min(n, len(test_descriptions))
+    return random.sample(test_descriptions, n)
+
+
 def create_train_test_splits(image_dir, descriptions_file, image_size=512, train_ratio=0.8, seed=42):
     """Create train and test dataset splits"""
     

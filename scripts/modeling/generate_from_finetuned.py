@@ -9,6 +9,10 @@ from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
 from peft import PeftModel
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import sys
+
+sys.path.insert(0, str(Path(__file__).parent))
+from ceramic_dataset import get_test_descriptions
 
 def load_base_model(model_name="runwayml/stable-diffusion-v1-5"):
     """Load base Stable Diffusion model from HuggingFace"""
@@ -342,6 +346,12 @@ if __name__ == "__main__":
                         help="Path to checkpoint directory (default: None, uses base model)")
     parser.add_argument("--model-name", type=str, default="runwayml/stable-diffusion-v1-5",
                         help="Base model name from HuggingFace (default: runwayml/stable-diffusion-v1-5)")
+    parser.add_argument("--image-dir", type=str, default="data/cropped_artifacts",
+                        help="Path to image directory for test prompts")
+    parser.add_argument("--descriptions-file", type=str, default="data/all_artifacts.json",
+                        help="Path to descriptions JSON file")
+    parser.add_argument("--num-prompts", type=int, default=6,
+                        help="Number of test prompts to sample (default: 6)")
     args = parser.parse_args()
     
     if args.checkpoint_dir:
@@ -370,22 +380,21 @@ if __name__ == "__main__":
         if models is None:
             exit(1)
     
-    # Example prompts from ceramic artifacts
-    test_prompts = [
-        #"Draw a profile view of an iberian pottery with Horizontal striped design with alternating red and white bands only at the top and bottom. Smooth surface with painted decoration.",
-        "Draw a profile view of an iberian bowl with Horizontal striped design with alternating red and white bands. Linear, repetitive geometric pattern creating a rhythmic visual effect. Smooth surface with painted decoration.",
-        "iberian ceramic artifact with red decorative patterns and horizontal stripes",
-        "iberian pottery vessel with scalloped borders and geometric designs",
-        "iberian ceramic bowl with intricate red paint patterns and curved shapes",
-        "iberian pottery fragment with red and white decorative motifs",
-        "iberian ceramic artifact with feathered design patterns in red",
-    ]
+    test_prompts = get_test_descriptions(
+        image_dir=args.image_dir,
+        descriptions_file=args.descriptions_file,
+        n=args.num_prompts
+    )
+    
+    print(f"\nUsing {len(test_prompts)} test prompts:")
+    for i, prompt in enumerate(test_prompts, 1):
+        print(f"  {i}. {prompt[:80]}...")
     
     # Generate images
     generated_images = generate_images(
         test_prompts,
         models,
-        num_inference_steps=50,
+        num_inference_steps=10,
         guidance_scale=7.5, # 7.5
         seed=42
     )
