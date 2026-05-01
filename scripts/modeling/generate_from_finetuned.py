@@ -10,6 +10,73 @@ from peft import PeftModel
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
+def load_base_model(model_name="runwayml/stable-diffusion-v1-5"):
+    """Load base Stable Diffusion model from HuggingFace"""
+    
+    print("="*70)
+    print(f"LOADING BASE MODEL: {model_name}")
+    print("="*70)
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}\n")
+    
+    try:
+        print("Loading tokenizer...")
+        tokenizer = CLIPTokenizer.from_pretrained(
+            model_name,
+            subfolder="tokenizer"
+        )
+        
+        print("Loading text encoder...")
+        text_encoder = CLIPTextModel.from_pretrained(
+            model_name,
+            subfolder="text_encoder",
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
+        )
+        text_encoder = text_encoder.to(device)
+        text_encoder.eval()
+        
+        print("Loading VAE...")
+        vae = AutoencoderKL.from_pretrained(
+            model_name,
+            subfolder="vae",
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
+        )
+        vae = vae.to(device)
+        vae.eval()
+        
+        print("Loading scheduler...")
+        noise_scheduler = DDPMScheduler.from_pretrained(
+            model_name,
+            subfolder="scheduler"
+        )
+        
+        print("Loading UNet...")
+        unet = UNet2DConditionModel.from_pretrained(
+            model_name,
+            subfolder="unet",
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
+        )
+        unet = unet.to(device)
+        unet.eval()
+        
+        print("\n✓ All models loaded successfully!")
+        
+        return {
+            "tokenizer": tokenizer,
+            "text_encoder": text_encoder,
+            "vae": vae,
+            "unet": unet,
+            "noise_scheduler": noise_scheduler,
+            "device": device
+        }
+    
+    except Exception as e:
+        print(f"❌ Error loading models: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
 def load_finetuned_models(checkpoint_dir="vanilla_finetuned/final"):
     """Load finetuned models from checkpoint directory"""
     
@@ -270,30 +337,38 @@ def display_image_grid(images, cols=2, output_dir="generated_images", prefix="")
 
 # Main execution
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate images from finetuned diffuser model")
-    parser.add_argument("--checkpoint-dir", type=str, default="vanilla_finetuned/final",
-                        help="Path to checkpoint directory (default: vanilla_finetuned/final)")
+    parser = argparse.ArgumentParser(description="Generate images from finetuned or base diffuser model")
+    parser.add_argument("--checkpoint-dir", type=str, default=None,
+                        help="Path to checkpoint directory (default: None, uses base model)")
+    parser.add_argument("--model-name", type=str, default="runwayml/stable-diffusion-v1-5",
+                        help="Base model name from HuggingFace (default: runwayml/stable-diffusion-v1-5)")
     args = parser.parse_args()
     
-    prefix = Path(args.checkpoint_dir).parent.name.replace("_finetuned", "") + "_"
-    
-    # Load finetuned models
-    print("Loading finetuned models...\n")
-    models = load_finetuned_models(checkpoint_dir=args.checkpoint_dir)
-    
-    if models is None:
-        print("\nTrying to find latest checkpoint...")
-        checkpoints = sorted(Path(args.checkpoint_dir).parent.glob("checkpoint_*"))
-        if checkpoints:
-            latest = checkpoints[-1]
-            print(f"Found: {latest}")
-            models = load_finetuned_models(checkpoint_dir=str(latest))
-        else:
-            print("No checkpoints found!")
+    if args.checkpoint_dir:
+        prefix = Path(args.checkpoint_dir).parent.name.replace("_finetuned", "") + "_"
+        print("Loading finetuned models...\n")
+        models = load_finetuned_models(checkpoint_dir=args.checkpoint_dir)
+        
+        if models is None:
+            print("\nTrying to find latest checkpoint...")
+            checkpoints = sorted(Path(args.checkpoint_dir).parent.glob("checkpoint_*"))
+            if checkpoints:
+                latest = checkpoints[-1]
+                print(f"Found: {latest}")
+                models = load_finetuned_models(checkpoint_dir=str(latest))
+            else:
+                print("No checkpoints found!")
+                exit(1)
+        
+        if models is None:
             exit(1)
-    
-    if models is None:
-        exit(1)
+    else:
+        prefix = Path(args.model_name).name.replace("stable-diffusion-", "").replace("-", "_") + "_"
+        print("Loading base model...\n")
+        models = load_base_model(model_name=args.model_name)
+        
+        if models is None:
+            exit(1)
     
     # Example prompts from ceramic artifacts
     test_prompts = [
