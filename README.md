@@ -100,9 +100,9 @@ uv run python scripts/modeling/finetune_vanilla_diffuser.py --output-dir my_fine
 **CLI Arguments:**
 - `--output-dir`: Name of the model output folder (default: `vanilla_finetuned`)
 - `--model-name`: Base model name or HuggingFace path (default: `runwayml/stable-diffusion-v1-5`)
-- `--grad-accum`: Gradient accumulation steps (default: `2`)
 - `--steps-per-epoch`: Limit training steps per epoch; `None` for all batches (default: `None`)
 - `--train-ratio`: Ratio of data for training (default: `0.8`)
+- `--lora-rank`: LoRA rank for fine-tuning (default: `16`)
 
 **Configuration defaults in script (edit directly for non-CLI params):**
 - `learning_rate`: `1e-5`
@@ -110,7 +110,7 @@ uv run python scripts/modeling/finetune_vanilla_diffuser.py --output-dir my_fine
 - `num_epochs`: `5`
 - `image_size`: `256`
 - `use_lora`: `True`
-- `lora_rank`: `64`
+- `lora_rank`: `16`
 - `gpu`: `0`
 
 **Examples:**
@@ -121,21 +121,26 @@ uv run python scripts/modeling/finetune_vanilla_diffuser.py
 # Custom output and model
 uv run python scripts/modeling/finetune_vanilla_diffuser.py --output-dir sd21_finetuned --model-name stabilityai/stable-diffusion-2-1
 
-# Quick test run (10 steps per epoch, 4 steps gradient accum)
-uv run python scripts/modeling/finetune_vanilla_diffuser.py --steps-per-epoch 10 --grad-accum 4
+# Quick test run (10 steps per epoch)
+uv run python scripts/modeling/finetune_vanilla_diffuser.py --steps-per-epoch 10
 
 # Use 90% of data for training
 uv run python scripts/modeling/finetune_vanilla_diffuser.py --train-ratio 0.9
+
+# Sweep LoRA ranks with different output directories
+bash run_lora_sweep.sh
 ```
 
 **Output:**
 - Checkpoints saved to `<output_dir>/checkpoint_epoch_N/`
 - Final model saved to `<output_dir>/final/`
 - Training loss plot saved to `<output_dir>/training_loss.png`
+- Training log saved to `<output_dir>/training_log.json` (config + per-epoch train/test losses)
+- Denoising sequence images saved to `<output_dir>/denoise_00.png` through `denoise_03.png`
 
 ### Generate from Finetuned Model
 
-Generate new ceramic artifact images using a finetuned model or any base Stable Diffusion model from HuggingFace. Prompts are sampled from the test split of the dataset.
+Generate new ceramic artifact images using a finetuned model or any base Stable Diffusion model from HuggingFace. Uses three curated prompts describing Iberian ceramic styles (geometric decoration, concentric designs, vessel patterns).
 
 ```bash
 uv run python scripts/modeling/generate_from_finetuned.py
@@ -144,9 +149,6 @@ uv run python scripts/modeling/generate_from_finetuned.py
 **CLI Arguments:**
 - `--checkpoint-dir`: Path to finetuned checkpoint directory. If `None`, loads base model from HuggingFace (default: `None`)
 - `--model-name`: Base model name from HuggingFace (default: `runwayml/stable-diffusion-v1-5`)
-- `--image-dir`: Path to image directory for loading test descriptions (default: `data/cropped_artifacts`)
-- `--descriptions-file`: Path to descriptions JSON file (default: `data/all_artifacts.json`)
-- `--num-prompts`: Number of test prompts to sample (default: `6`)
 
 **Examples:**
 ```bash
@@ -156,11 +158,8 @@ uv run python scripts/modeling/generate_from_finetuned.py --checkpoint-dir vanil
 # Generate from base HuggingFace model (no finetuning)
 uv run python scripts/modeling/generate_from_finetuned.py --model-name runwayml/stable-diffusion-v1-5
 
-# Use a different checkpoint with more prompts
-uv run python scripts/modeling/generate_from_finetuned.py --checkpoint-dir small_finetuned/final --num-prompts 12
-
-# Custom data paths
-uv run python scripts/modeling/generate_from_finetuned.py --checkpoint-dir vanilla_finetuned/final --image-dir data/my_artifacts --descriptions-file data/my_artifacts.json
+# Use a different checkpoint
+uv run python scripts/modeling/generate_from_finetuned.py --checkpoint-dir vanilla_finetuned_lora_64/final
 ```
 
 **Output:**
