@@ -1,4 +1,5 @@
 import argparse
+import json
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
@@ -22,14 +23,76 @@ CONFIG = {
     "num_epochs": 5,
     "image_size": 256,
     "use_lora": True,
-    "lora_rank": 64,
+    "lora_rank": 16,
     "gpu": 0,
-    "grad_accum": 2,
     "steps_per_epoch": None,
-    "train_ratio": 0.8,
+    "train_ratio": 0.5,
 }
 
 torch.cuda.set_device(CONFIG["gpu"])
+
+def save_denoising_sequence(
+    unet, vae, text_encoder, tokenizer, noise_scheduler, device, output_dir,
+    prompts=None, num_inference_steps=50, num_images=4, image_size=256,
+):
+    """Generate images and save frames showing the denoising process."""
+    if prompts is None:
+        prompts = [
+            "a ceramic plate with iberian geometric, linear-based decoration with alternating cream and red fields; hatching and stippling create depth and visual interest across fragmented vessel.",
+            "a ceramic plate with a central solid red circle and a concentric design featuring an outer ring of alternating red and white rectangular segments arranged radially geometric, highly symmetrical composition with regular spacing",
+            "a ceramic vessel with graduated complexity from base to rim, with decoration increasing in density toward the top. The combination of simple lines and crosshatched triangles creates a dynamic visual hierarchy. The vessel demonstrates controlled, red geometric patterning typical of iberian ceramic design." ]
+
+    save_steps = [0, 10, 30, 45]
+    noise_scheduler.set_timesteps(num_inference_steps)
+
+    for img_idx, prompt in enumerate(prompts[:num_images]):
+        generator = torch.Generator(device=device).manual_seed(42 + img_idx)
+        latents = torch.randn(
+            (1, unet.config.in_channels, image_size // 8, image_size // 8),
+            generator=generator, device=device,
+        )
+
+        text_input = tokenizer(
+            prompt, padding="max_length",
+            max_length=tokenizer.model_max_length, truncation=True,
+            return_tensors="pt",
+        )
+        text_embeddings = text_encoder(text_input.input_ids.to(device))[0]
+
+        frames = []
+        step_labels = []
+        latents = latents * noise_scheduler.init_noise_sigma
+
+        for step_idx, t in enumerate(noise_scheduler.timesteps):
+            latent_model_input = noise_scheduler.scale_model_input(latents, t)
+            noise_pred = unet(
+                latent_model_input, t,
+                encoder_hidden_states=text_embeddings,
+            ).sample
+            latents = noise_scheduler.step(noise_pred, t, latents).prev_sample
+
+            if step_idx in save_steps or step_idx == len(noise_scheduler.timesteps) - 1:
+                with torch.no_grad():
+                    denoised = latents / 0.18215
+                    image = vae.decode(denoised.float()).sample
+                    image = (image / 2 + 0.5).clamp(0, 1).squeeze(0).cpu().permute(1, 2, 0)
+                frames.append(image.numpy())
+                step_labels.append(f"t={t.item()}")
+
+        fig, axes = plt.subplots(1, len(frames), figsize=(4 * len(frames), 4))
+        if len(frames) == 1:
+            axes = [axes]
+        for ax, frame, label in zip(axes, frames, step_labels):
+            ax.imshow(frame)
+            ax.set_title(label, fontsize=10)
+            ax.axis("off")
+        fig.suptitle(prompt, fontsize=12, y=0.95)
+        plt.tight_layout()
+        out_path = Path(output_dir) / f"denoise_{img_idx:02d}.png"
+        fig.savefig(out_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print(f"Denoising sequence saved to {out_path}")
+
 
 def save_loss_plot(losses, output_dir):
     """Save training loss as a line plot."""
@@ -104,7 +167,7 @@ def finetune_vanilla_diffuser(
         print("Applying LoRA to UNet...")
         lora_config = LoraConfig(
             r=config["lora_rank"],
-            lora_alpha=32,
+            lora_alpha=config["lora_rank"],
             target_modules=["to_k", "to_v", "to_q", "linear_1", "linear_2"],
             lora_dropout=0.1,
             bias="none"
@@ -130,14 +193,14 @@ def finetune_vanilla_diffuser(
         image_dir=image_dir,
         descriptions_file=descriptions_file,
         image_size=config["image_size"],
-        train_ratio=config.get("train_ratio", 0.8)
+        train_ratio=config.get("train_ratio", 0.5)
     )
     
     train_dataloader = DataLoader(
         train_dataset,
         batch_size=config["batch_size"],
         shuffle=True,
-        num_workers=0,
+        num_workers=4,
         pin_memory=True if device.type == "cuda" else False
     )
     
@@ -145,7 +208,7 @@ def finetune_vanilla_diffuser(
         test_dataset,
         batch_size=config["batch_size"],
         shuffle=False,
-        num_workers=0,
+        num_workers=4,
         pin_memory=True if device.type == "cuda" else False
     )
     
@@ -160,6 +223,7 @@ def finetune_vanilla_diffuser(
     unet.train()
     
     epoch_losses = []
+    epoch_test_losses = []
     
     for epoch in range(config["num_epochs"]):
         print(f"\n[Epoch {epoch + 1}/{config['num_epochs']}]")
@@ -213,26 +277,19 @@ def finetune_vanilla_diffuser(
             
             # Calculate loss
             loss = F.mse_loss(noise_pred, noise)
-            loss = loss / config["grad_accum"]
             
             # Backward pass
             loss.backward()
             
-            if (batch_idx + 1) % config["grad_accum"] == 0:
-                torch.nn.utils.clip_grad_norm_(unet.parameters(), 1.0)
-                optimizer.step()
-                optimizer.zero_grad()
-            
-            total_loss += loss.item() * config["grad_accum"]
-            progress_bar.set_postfix({
-                "loss": f"{loss.item() * config['grad_accum']:.4f}",
-                "avg_loss": f"{total_loss / (batch_idx + 1):.4f}"
-            })
-        
-        if len(train_dataloader) % config["grad_accum"] != 0:
             torch.nn.utils.clip_grad_norm_(unet.parameters(), 1.0)
             optimizer.step()
             optimizer.zero_grad()
+            
+            total_loss += loss.item()
+            progress_bar.set_postfix({
+                "loss": f"{loss.item():.4f}",
+                "avg_loss": f"{total_loss / (batch_idx + 1):.4f}"
+            })
         
         avg_loss = total_loss / len(train_dataloader)
         epoch_losses.append(avg_loss)
@@ -278,6 +335,7 @@ def finetune_vanilla_diffuser(
                 test_loss += F.mse_loss(noise_pred, noise).item()
         
         avg_test_loss = test_loss / len(test_dataloader)
+        epoch_test_losses.append(avg_test_loss)
         print(f"Epoch {epoch + 1} test loss: {avg_test_loss:.4f}")
         unet.train()
         
@@ -316,6 +374,25 @@ def finetune_vanilla_diffuser(
     
     save_loss_plot(epoch_losses, config["output_dir"])
     
+    print("\n" + "="*70)
+    print("GENERATING DENOISING SEQUENCES")
+    print("="*70)
+    unet.eval()
+    save_denoising_sequence(
+        unet, vae, text_encoder, tokenizer, noise_scheduler, device,
+        config["output_dir"], image_size=config["image_size"],
+    )
+    
+    training_log = {
+        "config": config,
+        "train_losses": epoch_losses,
+        "test_losses": epoch_test_losses,
+    }
+    log_path = Path(config["output_dir"]) / "training_log.json"
+    with open(log_path, "w") as f:
+        json.dump(training_log, f, indent=2)
+    print(f"Training log saved to {log_path}")
+    
     print(f"\n✓ Finetuning complete! Model saved to {final_path}")
     
     return {
@@ -336,19 +413,19 @@ if __name__ == "__main__":
                         help="Name of the model output folder (default: vanilla_finetuned)")
     parser.add_argument("--model-name", type=str, default=CONFIG["model_name"],
                         help="Base model name or path (default: runwayml/stable-diffusion-v1-5)")
-    parser.add_argument("--grad-accum", type=int, default=CONFIG["grad_accum"],
-                        help="Gradient accumulation steps (default: 2)")
     parser.add_argument("--steps-per-epoch", type=int, default=None,
                         help="Limit training steps per epoch (default: all batches)")
     parser.add_argument("--train-ratio", type=float, default=CONFIG["train_ratio"],
                         help="Ratio of data for training (default: 0.8)")
+    parser.add_argument("--lora-rank", type=int, default=CONFIG["lora_rank"],
+                        help="LoRA rank for fine-tuning (default: 16)")
     args = parser.parse_args()
     
     CONFIG["output_dir"] = args.output_dir
     CONFIG["model_name"] = args.model_name
-    CONFIG["grad_accum"] = args.grad_accum
     CONFIG["steps_per_epoch"] = args.steps_per_epoch
     CONFIG["train_ratio"] = args.train_ratio
+    CONFIG["lora_rank"] = args.lora_rank
     
     # Prepare dataset first
     print("Make sure you have run: python prepare_dataset.py\n")
