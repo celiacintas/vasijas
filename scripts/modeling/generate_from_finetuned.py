@@ -270,8 +270,9 @@ def generate_images(
             latents = 1 / 0.18215 * latents
             image = vae.decode(latents).sample
             image = (image / 2 + 0.5).clamp(0, 1)
+            image = image.nan_to_num_(nan=0.5, posinf=1.0, neginf=0.0)
             image = image.permute(0, 2, 3, 1).cpu().numpy()[0]
-            image = (image * 255).astype('uint8')
+            image = (image * 255).round().clip(0, 255).astype('uint8')
             
             # Convert to PIL Image
             pil_image = Image.fromarray(image)
@@ -377,14 +378,14 @@ if __name__ == "__main__":
         print("Loading base model...\n")
         models = load_base_model(model_name=args.model_name)
         
-        if models is None:
-            exit(1)
+    if models is None:
+        exit(1)
     
-    test_prompts = get_test_descriptions(
-        image_dir=args.image_dir,
-        descriptions_file=args.descriptions_file,
-        n=args.num_prompts
-    )
+    test_prompts = [
+        "a ceramic plate with iberian geometric, linear-based decoration with alternating cream and red fields; hatching and stippling create depth and visual interest across fragmented vessel.",
+        "a ceramic plate with a central solid red circle and a concentric design featuring an outer ring of alternating red and white rectangular segments arranged radially geometric, highly symmetrical composition with regular spacing",
+        "a ceramic vessel with graduated complexity from base to rim, with decoration increasing in density toward the top. The combination of simple lines and crosshatched triangles creates a dynamic visual hierarchy. The vessel demonstrates controlled, red geometric patterning typical of iberian ceramic design."
+    ]
     
     print(f"\nUsing {len(test_prompts)} test prompts:")
     for i, prompt in enumerate(test_prompts, 1):
@@ -394,7 +395,7 @@ if __name__ == "__main__":
     generated_images = generate_images(
         test_prompts,
         models,
-        num_inference_steps=10,
+        num_inference_steps=100,
         guidance_scale=7.5, # 7.5
         seed=42
     )
