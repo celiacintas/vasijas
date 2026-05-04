@@ -74,8 +74,8 @@ def save_denoising_sequence(
             if step_idx in save_steps or step_idx == len(noise_scheduler.timesteps) - 1:
                 with torch.no_grad():
                     denoised = latents / 0.18215
-                    image = vae.decode(denoised.float()).sample
-                    image = (image / 2 + 0.5).clamp(0, 1).squeeze(0).cpu().permute(1, 2, 0)
+                    image = vae.decode(denoised).sample
+                    image = (image.float() / 2 + 0.5).clamp(0, 1).squeeze(0).cpu().permute(1, 2, 0)
                 frames.append(image.numpy())
                 step_labels.append(f"t={t.item()}")
 
