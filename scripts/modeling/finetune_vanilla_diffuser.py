@@ -19,7 +19,7 @@ CONFIG = {
     #"OFA-Sys/small-stable-diffusion-v0", #
     "output_dir": "vanilla_finetuned",
     "learning_rate": 1e-5,
-    "batch_size": 16,
+    "batch_size": 8,
     "num_epochs": 5,
     "image_size": 512,
     "use_lora": True,
