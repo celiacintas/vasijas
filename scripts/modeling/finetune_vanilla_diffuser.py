@@ -49,7 +49,7 @@ def save_denoising_sequence(
         generator = torch.Generator(device=device).manual_seed(42 + img_idx)
         latents = torch.randn(
             (1, unet.config.in_channels, image_size // 8, image_size // 8),
-            generator=generator, device=device,
+            generator=generator, device=device, dtype=torch.float16,
         )
 
         text_input = tokenizer(
