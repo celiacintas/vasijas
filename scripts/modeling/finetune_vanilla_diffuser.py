@@ -21,7 +21,7 @@ CONFIG = {
     "learning_rate": 1e-5,
     "batch_size": 8,
     "num_epochs": 5,
-    "image_size": 512,
+    "image_size": 256,
     "use_lora": True,
     "lora_rank": 16,
     "gpu": 0,
