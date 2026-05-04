@@ -34,15 +34,18 @@ torch.cuda.set_device(CONFIG["gpu"])
 def save_denoising_sequence(
     unet, vae, text_encoder, tokenizer, noise_scheduler, device, output_dir,
     prompts=None, num_inference_steps=50, num_images=4, image_size=256,
+    guidance_scale=7.5,
 ):
     """Generate images and save frames showing the denoising process."""
     if prompts is None:
         prompts = [
-            "a ceramic plate with iberian geometric, linear-based decoration with alternating cream and red fields; hatching and stippling create depth and visual interest across fragmented vessel.",
-            "a ceramic plate with a central solid red circle and a concentric design featuring an outer ring of alternating red and white rectangular segments arranged radially geometric, highly symmetrical composition with regular spacing",
-            "a ceramic vessel with graduated complexity from base to rim, with decoration increasing in density toward the top. The combination of simple lines and crosshatched triangles creates a dynamic visual hierarchy. The vessel demonstrates controlled, red geometric patterning typical of iberian ceramic design." ]
+            "a ceramic vase",
+            "a ceramic bowl",
+            "a ceramic cup",
+            "a ceramic plate",
+        ]
 
-    save_steps = [0, 10, 30, 45]
+    save_steps = [0, 10, 20, 30, 40, 45, 49]
     noise_scheduler.set_timesteps(num_inference_steps)
 
     for img_idx, prompt in enumerate(prompts[:num_images]):
@@ -51,24 +54,33 @@ def save_denoising_sequence(
             (1, unet.config.in_channels, image_size // 8, image_size // 8),
             generator=generator, device=device, dtype=torch.float16,
         )
+        latents = latents * noise_scheduler.init_noise_sigma
 
         text_input = tokenizer(
             prompt, padding="max_length",
             max_length=tokenizer.model_max_length, truncation=True,
             return_tensors="pt",
         )
-        text_embeddings = text_encoder(text_input.input_ids.to(device))[0]
+        text_embeds = text_encoder(text_input.input_ids.to(device))[0]
+        uncond_input = tokenizer(
+            [""], padding="max_length",
+            max_length=tokenizer.model_max_length, return_tensors="pt",
+        )
+        uncond_embeds = text_encoder(uncond_input.input_ids.to(device))[0]
+        cond_embeds = torch.cat([uncond_embeds, text_embeds])
 
         frames = []
         step_labels = []
-        latents = latents * noise_scheduler.init_noise_sigma
 
         for step_idx, t in enumerate(noise_scheduler.timesteps):
-            latent_model_input = noise_scheduler.scale_model_input(latents, t)
+            latent_model_input = torch.cat([latents] * 2)
+            latent_model_input = noise_scheduler.scale_model_input(latent_model_input, t)
             noise_pred = unet(
                 latent_model_input, t,
-                encoder_hidden_states=text_embeddings,
+                encoder_hidden_states=cond_embeds,
             ).sample
+            noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+            noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
             latents = noise_scheduler.step(noise_pred, t, latents).prev_sample
 
             if step_idx in save_steps or step_idx == len(noise_scheduler.timesteps) - 1:
@@ -77,7 +89,7 @@ def save_denoising_sequence(
                     image = vae.decode(denoised).sample
                     image = (image.float() / 2 + 0.5).clamp(0, 1).squeeze(0).cpu().permute(1, 2, 0)
                 frames.append(image.numpy())
-                step_labels.append(f"t={t.item()}")
+                step_labels.append(f"step {step_idx}")
 
         fig, axes = plt.subplots(1, len(frames), figsize=(4 * len(frames), 4))
         if len(frames) == 1:
