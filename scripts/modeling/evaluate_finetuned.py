@@ -65,10 +65,10 @@ def load_finetuned_models(checkpoint_dir, device):
 def compute_fid(real_images, fake_images, device):
     fid = FrechetInceptionDistance(feature=64).to(device)
     for img in real_images:
-        img_255 = (img * 255).to(torch.uint8)
+        img_255 = (img.unsqueeze(0) * 255).to(torch.uint8)
         fid.update(img_255, real=True)
     for img in fake_images:
-        img_255 = (img * 255).to(torch.uint8)
+        img_255 = (img.unsqueeze(0) * 255).to(torch.uint8)
         fid.update(img_255, real=False)
     return fid.compute().item()
 
@@ -115,7 +115,10 @@ def find_lora_checkpoints(base_dir="."):
     for p in sorted(Path(base_dir).glob("vanilla_finetuned_lora_*/final")):
         if p.is_dir():
             rank = p.parent.name.replace("vanilla_finetuned_lora_", "")
-            checkpoints.append({"path": str(p), "rank": rank})
+            checkpoints.append({"path": str(p), "rank": f"lora_{rank}"})
+    for p in sorted(Path(base_dir).glob("vanilla_finetuned_full/final")):
+        if p.is_dir():
+            checkpoints.append({"path": str(p), "rank": "full"})
     return checkpoints
 
 

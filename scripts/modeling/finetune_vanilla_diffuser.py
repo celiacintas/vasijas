@@ -97,7 +97,7 @@ def save_denoising_sequence(
             ax.imshow(frame)
             ax.set_title(label, fontsize=10)
             ax.axis("off")
-        fig.suptitle(prompt, fontsize=12, y=0.95)
+        fig.text(0.5, 0.01, prompt, ha="center", va="bottom", fontsize=10, wrap=True)
         plt.tight_layout()
         out_path = Path(output_dir) / f"denoise_{img_idx:02d}.png"
         fig.savefig(out_path, dpi=150, bbox_inches="tight")
@@ -437,6 +437,7 @@ if __name__ == "__main__":
     CONFIG["steps_per_epoch"] = args.steps_per_epoch
     CONFIG["train_ratio"] = args.train_ratio
     CONFIG["lora_rank"] = args.lora_rank
+    CONFIG["use_lora"] = args.lora_rank > 0
     
     # Prepare dataset first
     print("Make sure you have run: python prepare_dataset.py\n")
