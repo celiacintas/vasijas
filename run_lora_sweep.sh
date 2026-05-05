@@ -28,7 +28,9 @@ for RANK in 16 32 64 128 256 512 1024 2048; do
         --lora-rank "$RANK"
 
     echo "Finished lora_rank=$RANK"
-    evaluate_model "vanilla_finetuned_lora_${RANK}" "lora_${RANK}"
 done
 
+for RANK in 16 32 64 128 256 512 1024 2048; do
+    evaluate_model "vanilla_finetuned_lora_${RANK}" "lora_${RANK}"
+done
 echo "All training runs complete."
