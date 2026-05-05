@@ -213,16 +213,26 @@ if __name__ == "__main__":
     parser.add_argument("--num-inference-steps", type=int, default=100)
     parser.add_argument("--guidance-scale", type=float, default=7.5)
     parser.add_argument("--output-file", type=str, default="evaluation_results.json")
+    parser.add_argument("--folder", type=str, default=None,
+                        help="Evaluate a single folder (e.g. vanilla_finetuned_full/final or vanilla_finetuned_lora_256/final)")
     args = parser.parse_args()
 
-    checkpoints = find_lora_checkpoints()
-    if not checkpoints:
-        print("No finetuned checkpoints found matching 'vanilla_finetuned_lora_*/final'")
-        exit(1)
+    if args.folder:
+        folder_path = Path(args.folder)
+        if folder_path.is_dir():
+            checkpoints = [{"path": str(folder_path), "rank": folder_path.name}]
+        else:
+            print(f"Folder not found: {args.folder}")
+            exit(1)
+    else:
+        checkpoints = find_lora_checkpoints()
+        if not checkpoints:
+            print("No finetuned checkpoints found matching 'vanilla_finetuned_lora_*/final' or 'vanilla_finetuned_full/final'")
+            exit(1)
 
     print(f"Found {len(checkpoints)} checkpoint(s):")
     for ckpt in checkpoints:
-        print(f"  - LoRA rank={ckpt['rank']} ({ckpt['path']})")
+        print(f"  - {ckpt['rank']} ({ckpt['path']})")
 
     evaluate_checkpoints(
         checkpoints,
