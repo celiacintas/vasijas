@@ -65,10 +65,10 @@ def load_finetuned_models(checkpoint_dir, device):
 def compute_fid(real_images, fake_images, device):
     fid = FrechetInceptionDistance(feature=64).to(device)
     for img in real_images:
-        img_255 = (img.unsqueeze(0) * 255).to(torch.uint8)
+        img_255 = (img.unsqueeze(0).to(device) * 255).to(torch.uint8)
         fid.update(img_255, real=True)
     for img in fake_images:
-        img_255 = (img.unsqueeze(0) * 255).to(torch.uint8)
+        img_255 = (img.unsqueeze(0).to(device) * 255).to(torch.uint8)
         fid.update(img_255, real=False)
     return fid.compute().item()
 
