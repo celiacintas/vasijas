@@ -74,17 +74,21 @@ def compute_fid(real_images, fake_images, device):
 
 
 def compute_clip_score(images, prompts, device):
-    from torchmetrics.multimodal import CLIPScore
+    from transformers import CLIPModel, CLIPProcessor
+
+    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
+    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
     scores = []
-    scorer = CLIPScore(model_name_or_path="openai/clip-vit-base-patch32").to(device)
-
     for img, prompt in zip(images, prompts):
-        img_tensor = (ToTensor()(img) * 255).to(torch.uint8).unsqueeze(0).to(device)
-        score = scorer(img_tensor, prompt).item()
-        scores.append(score)
+        inputs = processor(text=[prompt], images=img, return_tensors="pt", padding=True).to(device)
+        with torch.no_grad():
+            outputs = model(**inputs)
+            logits_per_image = outputs.logits_per_image
+            scores.append(logits_per_image.item())
 
-    return np.mean(scores), scores
+    mean_score = np.mean(scores) if scores else 0.0
+    return mean_score, scores
 
 
 def collect_real_images(image_dir, descriptions_file, num_images, device):

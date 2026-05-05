@@ -5,11 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "beautifulsoup4>=4.13.0",
     "diffusers>=0.37.1",
     "docling>=2.88.0",
     "gdown>=6.0.0",
     "ipython>=9.13.0",
     "matplotlib>=3.10.9",
     "peft>=0.19.0",
+    "playwright>=1.51.0",
+    "requests>=2.32.0",
     "torchmetrics>=1.9.0",
 ]
