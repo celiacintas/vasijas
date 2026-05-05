@@ -14,7 +14,6 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent))
 from ceramic_dataset import create_train_test_splits
-from generate_from_finetuned import generate_images
 
 PROMPTS = [
     "a ceramic plate with iberian geometric, linear-based decoration with alternating cream and red fields; hatching and stippling create depth and visual interest across fragmented vessel.",
@@ -157,21 +156,47 @@ def evaluate_checkpoints(
             for j in range(num_generated_per_prompt):
                 seed = i * num_generated_per_prompt + j + 42
                 all_seeds.append(seed)
-                img = generate_images(
-                    models["unet"],
-                    models["vae"],
-                    models["text_encoder"],
-                    models["tokenizer"],
-                    models["noise_scheduler"],
-                    device,
-                    prompts=[prompt],
-                    num_images=1,
-                    num_inference_steps=num_inference_steps,
-                    guidance_scale=guidance_scale,
-                    seed=seed,
-                )[0]
-                all_gen_pil.append(img)
-                all_gen_tensors.append(ToTensor()(img))
+
+                generator = torch.Generator(device=device).manual_seed(seed)
+                latents = torch.randn(
+                    (1, 4, 256 // 8, 256 // 8),
+                    generator=generator, device=device, dtype=torch.float16,
+                )
+                noise_scheduler.set_timesteps(num_inference_steps)
+                latents = latents * noise_scheduler.init_noise_sigma
+
+                text_input = models["tokenizer"](
+                    prompt, padding="max_length",
+                    max_length=models["tokenizer"].model_max_length, truncation=True,
+                    return_tensors="pt",
+                )
+                text_embeds = models["text_encoder"](text_input.input_ids.to(device))[0]
+                uncond_input = models["tokenizer"](
+                    [""], padding="max_length",
+                    max_length=models["tokenizer"].model_max_length, return_tensors="pt",
+                )
+                uncond_embeds = models["text_encoder"](uncond_input.input_ids.to(device))[0]
+                cond_embeds = torch.cat([uncond_embeds, text_embeds])
+
+                for t in noise_scheduler.timesteps:
+                    latent_model_input = torch.cat([latents] * 2)
+                    latent_model_input = noise_scheduler.scale_model_input(latent_model_input, t)
+                    noise_pred = models["unet"](
+                        latent_model_input, t,
+                        encoder_hidden_states=cond_embeds,
+                    ).sample
+                    noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+                    noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+                    latents = noise_scheduler.step(noise_pred, t, latents).prev_sample
+
+                with torch.no_grad():
+                    denoised = latents / 0.18215
+                    image = models["vae"].decode(denoised).sample
+                    image = (image.float() / 2 + 0.5).clamp(0, 1).squeeze(0).cpu().permute(1, 2, 0).numpy()
+
+                pil_img = Image.fromarray((image * 255).astype("uint8"))
+                all_gen_pil.append(pil_img)
+                all_gen_tensors.append(ToTensor()(pil_img))
                 used_prompts.append(prompt)
 
         print(f"Generated {len(all_gen_pil)} images")
