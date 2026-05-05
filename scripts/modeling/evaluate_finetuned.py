@@ -163,7 +163,7 @@ def evaluate_checkpoints(
                     guidance_scale=guidance_scale,
                     seed=seed,
                 )
-                pil_img = imgs[0]
+                _, pil_img = imgs[0]
                 all_gen_pil.append(pil_img)
                 all_gen_tensors.append(ToTensor()(pil_img))
                 used_prompts.append(prompt)
