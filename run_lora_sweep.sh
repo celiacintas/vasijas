@@ -2,7 +2,18 @@
 
 SCRIPT="scripts/modeling/finetune_vanilla_diffuser.py"
 
-for RANK in 16 64 128 256 512 1028 2046; do
+echo "=========================================="
+echo "Starting full fine-tuning (no LoRA)"
+echo "=========================================="
+
+python "$SCRIPT" \
+    --output-dir "vanilla_finetuned_full" \
+    --lora-rank 0
+
+echo "Finished full fine-tuning"
+echo ""
+
+for RANK in 16 64 128 256 512 1024 2048; do
     echo "=========================================="
     echo "Starting training with lora_rank=$RANK"
     echo "=========================================="
