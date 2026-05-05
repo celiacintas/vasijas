@@ -74,19 +74,14 @@ def compute_fid(real_images, fake_images, device):
 
 
 def compute_clip_score(images, prompts, device):
-    try:
-        from torchmetrics.functional.multimodal import clip_score
-    except ImportError:
-        from torchmetrics.multimodal import CLIPScore
-        clip_score = None
+    from torchmetrics.multimodal import CLIPScore
 
     scores = []
     scorer = CLIPScore(model_name_or_path="openai/clip-vit-base-patch32").to(device)
 
     for img, prompt in zip(images, prompts):
-        img_tensor = (ToTensor()(img) * 255).to(torch.uint8).to(device)
-        img_tensor = img_tensor.unsqueeze(0)
-        score = clip_score(img_tensor, prompt, scorer).item()
+        img_tensor = (ToTensor()(img) * 255).to(torch.uint8).unsqueeze(0).to(device)
+        score = scorer(img_tensor, prompt).item()
         scores.append(score)
 
     return np.mean(scores), scores
