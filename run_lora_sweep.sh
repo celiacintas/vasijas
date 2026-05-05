@@ -17,16 +17,6 @@ evaluate_model() {
     done
 }
 
-echo "=========================================="
-echo "Starting full fine-tuning (no LoRA)"
-echo "=========================================="
-
-python "$SCRIPT" \
-    --output-dir "vanilla_finetuned_full" \
-    --lora-rank 0
-
-echo "Finished full fine-tuning"
-evaluate_model "vanilla_finetuned_full" "full"
 
 for RANK in 16 32 64 128 256 512 1024 2048; do
     echo "=========================================="
