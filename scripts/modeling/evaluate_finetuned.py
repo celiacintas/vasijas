@@ -128,7 +128,7 @@ def evaluate_checkpoints(
     descriptions_file="data/all_artifacts.json",
     num_inference_steps=100,
     guidance_scale=7.5,
-    num_generated_per_prompt=5,
+    num_generated_per_prompt=3,
     output_file="evaluation_results.json",
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
