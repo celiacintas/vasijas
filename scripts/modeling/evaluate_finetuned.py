@@ -114,7 +114,7 @@ def find_lora_checkpoints(base_dir="."):
     for p in sorted(Path(base_dir).glob("vanilla_finetuned_lora_*/final")):
         if p.is_dir():
             rank = p.parent.name.replace("vanilla_finetuned_lora_", "")
-            checkpoints.append({"path": str(p), "rank": f"lora_{rank}"})
+            checkpoints.append({"path": str(p), "rank": rank})
     for p in sorted(Path(base_dir).glob("vanilla_finetuned_full/final")):
         if p.is_dir():
             checkpoints.append({"path": str(p), "rank": "full"})
@@ -142,29 +142,37 @@ def evaluate_checkpoints(
         ckpt_path = ckpt["path"]
         rank = ckpt["rank"]
         print(f"\n{'='*70}")
-        print(f"Evaluating LoRA rank={rank} ({ckpt_path})")
+        label = "full" if rank == "full" else f"LoRA rank={rank}"
+        print(f"Evaluating {label} ({ckpt_path})")
         print(f"{'='*70}")
 
         models = load_finetuned_models(ckpt_path, device)
 
         all_gen_pil = []
         used_prompts = []
-        all_gen_tensors = []
         all_seeds = []
+        all_gen_tensors = []
 
-        for rep in range(num_generated_per_prompt):
-            rep_seed = 42 + rep * 100
-            gen_results = generate_images(
-                PROMPTS, models,
-                num_inference_steps=num_inference_steps,
-                guidance_scale=guidance_scale,
-                seed=rep_seed,
-            )
-            for prompt, pil_img in gen_results:
-                all_gen_pil.append(pil_img)
+        for i, prompt in enumerate(tqdm(PROMPTS, desc="Generating images")):
+            for j in range(num_generated_per_prompt):
+                seed = i * num_generated_per_prompt + j + 42
+                all_seeds.append(seed)
+                img = generate_images(
+                    models["unet"],
+                    models["vae"],
+                    models["text_encoder"],
+                    models["tokenizer"],
+                    models["noise_scheduler"],
+                    device,
+                    prompts=[prompt],
+                    num_images=1,
+                    num_inference_steps=num_inference_steps,
+                    guidance_scale=guidance_scale,
+                    seed=seed,
+                )[0]
+                all_gen_pil.append(img)
+                all_gen_tensors.append(ToTensor()(img))
                 used_prompts.append(prompt)
-                all_gen_tensors.append(ToTensor()(pil_img))
-            all_seeds.append(rep_seed)
 
         print(f"Generated {len(all_gen_pil)} images")
 
@@ -174,8 +182,10 @@ def evaluate_checkpoints(
         clip_mean, clip_per_image = compute_clip_score(all_gen_pil, used_prompts, device)
         print(f"CLIP Score (mean): {clip_mean:.4f}")
 
-        results[f"lora_{rank}"] = {
-            "rank": int(rank),
+        rank_num = 0 if rank == "full" else int(rank)
+        label = f"full" if rank == "full" else f"lora_{rank}"
+        results[label] = {
+            "rank": rank_num,
             "checkpoint": ckpt_path,
             "fid": fid_score,
             "clip_score_mean": clip_mean,
