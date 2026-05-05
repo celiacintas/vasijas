@@ -2,7 +2,7 @@
 
 SCRIPT="scripts/modeling/finetune_vanilla_diffuser.py"
 EVAL="scripts/modeling/evaluate_finetuned.py"
-GEN_PROMPTS=(3 5 10)
+GEN_PROMPTS=(5)
 
 evaluate_model() {
     local folder="$1"

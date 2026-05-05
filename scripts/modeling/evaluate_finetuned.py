@@ -223,7 +223,8 @@ if __name__ == "__main__":
     if args.folder:
         folder_path = Path(args.folder)
         if folder_path.is_dir():
-            checkpoints = [{"path": str(folder_path), "rank": folder_path.name}]
+            parent = folder_path.parent.name
+            checkpoints = [{"path": str(folder_path), "rank": parent}]
         else:
             print(f"Folder not found: {args.folder}")
             exit(1)
