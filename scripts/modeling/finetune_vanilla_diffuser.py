@@ -23,7 +23,7 @@ CONFIG = {
     "num_epochs": 5,
     "image_size": 256,
     "use_lora": True,
-    "lora_rank": 16,
+    "lora_rank": 2048,
     "gpu": 0,
     "steps_per_epoch": None,
     "train_ratio": 0.5,
