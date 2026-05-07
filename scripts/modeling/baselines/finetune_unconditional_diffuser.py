@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ceramic_dataset import create_train_test_splits
 
 CONFIG = {
-    "model_name": "runwayml/stable-diffusion-v1-5",
+    "model_name": "google/ddpm-ema-celebahq-256",
     "output_dir": "vanilla_finetuned_uncond",
     "learning_rate": 1e-5,
     "batch_size": 4,
@@ -122,7 +122,7 @@ def finetune_unconditional_diffuser(
         lora_config = LoraConfig(
             r=config["lora_rank"],
             lora_alpha=config["lora_rank"],
-            target_modules=["to_k", "to_v", "to_q", "linear_1", "linear_2"],
+            target_modules=["conv1", "conv2", "conv", "conv_out"],
             lora_dropout=0.1,
             bias="none"
         )
@@ -308,7 +308,7 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", type=str, default=CONFIG["output_dir"],
                         help="Name of the model output folder (default: vanilla_finetuned_uncond)")
     parser.add_argument("--model-name", type=str, default=CONFIG["model_name"],
-                        help="Base model name or path (default: runwayml/stable-diffusion-v1-5)")
+                        help="Base model name or path (default: google/ddpm-ema-celebahq-256)")
     parser.add_argument("--image-dir", type=str, default="data/cropped_artifacts",
                         help="Directory containing images (default: data/cropped_artifacts)")
     parser.add_argument("--steps-per-epoch", type=int, default=None,
