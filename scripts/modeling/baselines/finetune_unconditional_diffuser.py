@@ -275,7 +275,7 @@ def finetune_unconditional_diffuser(
     print("\n" + "="*70)
     print("SAVING FINAL MODEL")
     print("="*70)
---lora-rank
+
     final_path = Path(config["output_dir"]) / "final"
     final_path.mkdir(parents=True, exist_ok=True)
 
