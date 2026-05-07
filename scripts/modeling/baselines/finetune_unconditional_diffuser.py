@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ceramic_dataset import create_train_test_splits
 
 CONFIG = {
-    "model_name": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "model_name": "runwayml/stable-diffusion-v1-5",
     "output_dir": "vanilla_finetuned_uncond",
     "learning_rate": 1e-5,
     "batch_size": 4,
@@ -104,40 +104,25 @@ def finetune_unconditional_diffuser(
     device = torch.device(f"cuda:{CONFIG['gpu']}" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
-    print("Initializing UNet from scratch...")
-    unet = UNet2DModel(
-        sample_size=config["image_size"],
-        in_channels=3,
-        out_channels=3,
-        layers_per_block=2,
-        block_out_channels=(128, 128, 256, 256, 512, 512),
-        down_block_types=(
-            "DownBlock2D",
-            "DownBlock2D",
-            "DownBlock2D",
-            "DownBlock2D",
-            "AttnDownBlock2D",
-            "DownBlock2D",
-        ),
-        up_block_types=(
-            "UpBlock2D",
-            "AttnUpBlock2D",
-            "UpBlock2D",
-            "UpBlock2D",
-            "UpBlock2D",
-            "UpBlock2D",
-        ),
+    print("Loading pretrained UNet...")
+    unet = UNet2DModel.from_pretrained(
+        config["model_name"],
+        subfolder="unet",
+        torch_dtype=torch.float32
     )
 
-    print("Initializing scheduler...")
-    noise_scheduler = DDPMScheduler(num_train_timesteps=1000, beta_schedule="squaredcos_cap_v2")
+    print("Loading scheduler...")
+    noise_scheduler = DDPMScheduler.from_pretrained(
+        config["model_name"],
+        subfolder="scheduler"
+    )
 
     if config["use_lora"]:
         print("Applying LoRA to UNet...")
         lora_config = LoraConfig(
             r=config["lora_rank"],
             lora_alpha=config["lora_rank"],
-            target_modules=["conv1", "conv2", "conv", "conv_out"],
+            target_modules=["to_k", "to_v", "to_q", "linear_1", "linear_2"],
             lora_dropout=0.1,
             bias="none"
         )
@@ -323,7 +308,7 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", type=str, default=CONFIG["output_dir"],
                         help="Name of the model output folder (default: vanilla_finetuned_uncond)")
     parser.add_argument("--model-name", type=str, default=CONFIG["model_name"],
-                        help="Base model name or path (default: stable-diffusion-v1-5/stable-diffusion-v1-5)")
+                        help="Base model name or path (default: runwayml/stable-diffusion-v1-5)")
     parser.add_argument("--image-dir", type=str, default="data/cropped_artifacts",
                         help="Directory containing images (default: data/cropped_artifacts)")
     parser.add_argument("--steps-per-epoch", type=int, default=None,
