@@ -86,7 +86,7 @@ def save_denoising_sequence(
                 with torch.no_grad():
                     denoised = latents / 0.18215
                     image = vae.decode(denoised).sample
-                    image = (image.float() / 2 + 0.5).clamp(0, 1).squeeze(0).cpu().permute(1, 2, 0)
+                    image = (image.float() / 2 + 0.5).clamp(0, 1).squeeze(0).cpu().detach().permute(1, 2, 0)
                 frames.append(image.numpy())
                 step_labels.append(f"step {step_idx}")
 

@@ -57,7 +57,7 @@ def save_denoising_sequence(
             noisy_image = noise_scheduler.step(noise_pred, t, noisy_image).prev_sample
 
             if step_idx in save_steps or step_idx == len(noise_scheduler.timesteps) - 1:
-                image = (noisy_image.float() / 2 + 0.5).clamp(0, 1).squeeze(0).cpu().permute(1, 2, 0)
+                image = (noisy_image.float() / 2 + 0.5).clamp(0, 1).squeeze(0).cpu().detach().permute(1, 2, 0)
                 frames.append(image.numpy())
                 step_labels.append(f"step {step_idx}")
 
