@@ -183,6 +183,8 @@ def finetune_unconditional_diffuser(
     print(f"Train batches: {len(train_dataloader)}")
     print(f"Test batches: {len(test_dataloader)}")
 
+    Path(config["output_dir"]).mkdir(parents=True, exist_ok=True)
+
     # Training loop
     print("\n" + "="*70)
     print("STARTING TRAINING")

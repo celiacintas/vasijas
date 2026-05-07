@@ -1,36 +1,39 @@
 #!/bin/bash
 
 SCRIPT="scripts/modeling/finetune_vanilla_diffuser.py"
-EVAL="scripts/modeling/evaluate_finetuned.py"
-GEN_PROMPTS=(5)
+UNCOND_SCRIPT="scripts/modeling/baselines/finetune_unconditional_diffuser.py"
 
-evaluate_model() {
-    local folder="$1"
-    local label="$2"
-    for g in "${GEN_PROMPTS[@]}"; do
-        echo "Evaluating ${label} with --num-generated-per-prompt ${g}..."
-        python "$EVAL" \
-            --folder "${folder}/final" \
-            --num-generated-per-prompt "$g" \
-            --output-file "eval_${label}_gen${g}.json"
-        echo ""
-    done
-}
-
+echo "=========================================="
+echo "=== TEXT-CONDITIONED (vanilla_diffuser) ==="
+echo "=========================================="
 
 for RANK in 16 32 64 128 256 512 1024 2048; do
     echo "=========================================="
     echo "Starting training with lora_rank=$RANK"
     echo "=========================================="
 
-    python "$SCRIPT" \
+    uv python "$SCRIPT" \
         --output-dir "vanilla_finetuned_lora_${RANK}" \
         --lora-rank "$RANK"
 
     echo "Finished lora_rank=$RANK"
 done
 
+echo "=========================================="
+echo "=== UNCONDITIONAL (unconditional_diffuser) ==="
+echo "=========================================="
+
 for RANK in 16 32 64 128 256 512 1024 2048; do
-    evaluate_model "vanilla_finetuned_lora_${RANK}" "lora_${RANK}"
+    echo "=========================================="
+    echo "Starting unconditional training with lora_rank=$RANK"
+    echo "=========================================="
+
+    uv python "$UNCOND_SCRIPT" \
+        --output-dir "vanilla_uncond_lora_${RANK}" \
+        --lora-rank "$RANK"
+
+    echo "Finished unconditional lora_rank=$RANK"
 done
+
 echo "All training runs complete."
+

@@ -76,8 +76,8 @@ def compute_fid(real_images, fake_images, device):
 def compute_clip_score(images, prompts, device):
     from transformers import CLIPModel, CLIPProcessor
 
-    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
-    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    model = CLIPModel.from_pretrained("zer0int/LongCLIP-L-Diffuser").to(device)
+    processor = CLIPProcessor.from_pretrained("zer0int/LongCLIP-L-Diffuser")
 
     scores = []
     for img, prompt in zip(images, prompts):
