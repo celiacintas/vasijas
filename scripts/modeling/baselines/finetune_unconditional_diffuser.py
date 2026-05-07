@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ceramic_dataset import create_train_test_splits
 
 CONFIG = {
-    "model_name": "google/ddpm-ema-celebahq-256",
+    "model_name": "stable-diffusion-v1-5/stable-diffusion-v1-5",
     "output_dir": "vanilla_finetuned_uncond",
     "learning_rate": 1e-5,
     "batch_size": 4,
