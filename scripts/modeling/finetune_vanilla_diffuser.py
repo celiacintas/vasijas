@@ -19,7 +19,7 @@ CONFIG = {
     #"OFA-Sys/small-stable-diffusion-v0", #
     "output_dir": "vanilla_finetuned",
     "learning_rate": 1e-5,
-    "batch_size": 8,
+    "batch_size": 4,
     "num_epochs": 5,
     "image_size": 256,
     "use_lora": True,
@@ -40,8 +40,8 @@ def save_denoising_sequence(
     if prompts is None:
         prompts = [
             "a ceramic plate with iberian geometric, linear-based decoration with alternating cream and red fields; hatching and stippling create depth and visual interest across fragmented vessel.",
-            "a ceramic plate with a central solid red circle and a concentric design featuring an outer ring of alternating red and white rectangular segments arranged radially geometric, highly symmetrical composition with regular spacing red and white",
-            "a ceramic vessel with graduated complexity from base to rim, with decoration increasing in density toward the top. The combination of simple lines and crosshatched triangles creates a dynamic visual hierarchy. The vessel demonstrates controlled, red geometric patterning typical of iberian ceramic design."
+        #    "a ceramic plate with a central solid red circle and a concentric design featuring an outer ring of alternating red and white rectangular segments arranged radially geometric, highly symmetrical composition with regular spacing red and white",
+        #    "a ceramic vessel with graduated complexity from base to rim, with decoration increasing in density toward the top. The combination of simple lines and crosshatched triangles creates a dynamic visual hierarchy. The vessel demonstrates controlled, red geometric patterning typical of iberian ceramic design."
         ]
 
     save_steps = [0, 10, 20, 30, 40, 45, 49]
@@ -391,11 +391,6 @@ def finetune_vanilla_diffuser(
     print("GENERATING DENOISING SEQUENCES")
     print("="*70)
     unet.eval()
-    save_denoising_sequence(
-        unet, vae, text_encoder, tokenizer, noise_scheduler, device,
-        config["output_dir"], image_size=config["image_size"],
-    )
-    
     training_log = {
         "config": config,
         "train_losses": epoch_losses,
@@ -405,8 +400,15 @@ def finetune_vanilla_diffuser(
     with open(log_path, "w") as f:
         json.dump(training_log, f, indent=2)
     print(f"Training log saved to {log_path}")
+
+    save_denoising_sequence(
+        unet, vae, text_encoder, tokenizer, noise_scheduler, device,
+        config["output_dir"], image_size=config["image_size"],
+    )
     
-    print(f"\n✓ Finetuning complete! Model saved to {final_path}")
+    print(f"\n✓ Finetuning complete! Model saved to {final_path}")    
+    
+    
     
     return {
         "unet": unet,
