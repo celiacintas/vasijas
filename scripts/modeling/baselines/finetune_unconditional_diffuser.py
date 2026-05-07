@@ -19,7 +19,7 @@ CONFIG = {
     "model_name": "stable-diffusion-v1-5/stable-diffusion-v1-5",
     "output_dir": "vanilla_finetuned_uncond",
     "learning_rate": 1e-5,
-    "batch_size": 8,
+    "batch_size": 4,
     "num_epochs": 5,
     "image_size": 256,
     "use_lora": True,
@@ -275,7 +275,7 @@ def finetune_unconditional_diffuser(
     print("\n" + "="*70)
     print("SAVING FINAL MODEL")
     print("="*70)
-
+--lora-rank
     final_path = Path(config["output_dir"]) / "final"
     final_path.mkdir(parents=True, exist_ok=True)
 
