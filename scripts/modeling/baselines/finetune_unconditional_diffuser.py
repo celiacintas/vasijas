@@ -1,351 +1,248 @@
 import argparse
 import json
-import sys
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from tqdm import tqdm
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from diffusers import AutoencoderKL, UNet2DModel, DDPMScheduler
-from peft import get_peft_model, LoraConfig
-from ceramic_dataset import create_train_test_splits
+from tqdm import tqdm
+from accelerate import Accelerator
+from diffusers import UNet2DModel, DDPMScheduler, DDPMPipeline
+from diffusers.utils import make_image_grid
+from diffusers.optimization import get_cosine_schedule_with_warmup
+from torchvision import transforms
+from PIL import Image
+import os
+# following https://huggingface.co/docs/diffusers/tutorials/basic_training
 
 CONFIG = {
-    "model_name": "stable-diffusion-v1-5/stable-diffusion-v1-5",
     "output_dir": "vanilla_finetuned_uncond",
-    "learning_rate": 1e-5,
+    "learning_rate": 1e-4,
     "batch_size": 4,
-    "num_epochs": 5,
-    "image_size": 256,
-    "use_lora": True,
-    "lora_rank": 16,
-    "gpu": 0,
-    "steps_per_epoch": None,
-    "train_ratio": 0.5,
+    "num_epochs": 50,
+    "image_size": 128,
+    "gradient_accumulation_steps": 1,
+    "lr_warmup_steps": 500,
+    "mixed_precision": "no",
+    "save_image_epochs": 10,
+    "save_model_epochs": 30,
 }
 
-torch.cuda.set_device(CONFIG["gpu"])
 
-def save_denoising_sequence(
-    unet, vae, noise_scheduler, device, output_dir,
-    num_inference_steps=50, num_images=4, image_size=256,
-):
-    save_steps = [0, 10, 20, 30, 40, 45, 49]
-    noise_scheduler.set_timesteps(num_inference_steps)
-
-    for img_idx in range(num_images):
-        generator = torch.Generator(device=device).manual_seed(42 + img_idx)
-        latents = torch.randn(
-            (1, unet.config.in_channels, image_size // 8, image_size // 8),
-            generator=generator, device=device, dtype=torch.float32,
-        )
-        latents = latents * noise_scheduler.init_noise_sigma
-
-        frames = []
-        step_labels = []
-
-        for step_idx, t in enumerate(noise_scheduler.timesteps):
-            model_input = noise_scheduler.scale_model_input(latents, t)
-            noise_pred = unet(model_input, t).sample
-            latents = noise_scheduler.step(noise_pred, t, latents).prev_sample
-
-            if step_idx in save_steps or step_idx == len(noise_scheduler.timesteps) - 1:
-                with torch.no_grad():
-                    denoised = latents / 0.18215
-                    image = vae.decode(denoised).sample
-                    image = (image.float() / 2 + 0.5).clamp(0, 1).squeeze(0).cpu().detach().permute(1, 2, 0)
-                frames.append(image.numpy())
-                step_labels.append(f"step {step_idx}")
-
-        fig, axes = plt.subplots(1, len(frames), figsize=(4 * len(frames), 4))
-        if len(frames) == 1:
-            axes = [axes]
-        for ax, frame, label in zip(axes, frames, step_labels):
-            ax.imshow(frame)
-            ax.set_title(label, fontsize=10)
-            ax.axis("off")
-        fig.text(0.5, 0.01, "Unconditional generation", ha="center", va="bottom", fontsize=10, wrap=True)
-        plt.tight_layout()
-        out_path = Path(output_dir) / f"denoise_{img_idx:02d}.png"
-        fig.savefig(out_path, dpi=150, bbox_inches="tight")
-        plt.close(fig)
-        print(f"Denoising sequence saved to {out_path}")
+def make_grid(images, rows, cols):
+    w, h = images[0].size
+    grid = Image.new("RGB", (cols * w, rows * h))
+    for i, img in enumerate(images):
+        grid.paste(img, (i % cols * w, i // cols * h))
+    return grid
 
 
-def save_loss_plot(losses, output_dir):
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(1, len(losses) + 1), losses, marker="o", linewidth=2, markersize=8)
-    plt.xlabel("Epoch", fontsize=12)
-    plt.ylabel("Training Loss", fontsize=12)
-    plt.title("Training Loss Over Time", fontsize=14)
-    plt.grid(True, alpha=0.3)
-    plt.xticks(range(1, len(losses) + 1))
-
-    output_path = Path(output_dir) / "training_loss.png"
-    plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    plt.close()
-    print(f"Training loss plot saved to {output_path}")
+def evaluate(config, epoch, pipeline):
+    images = pipeline(
+        batch_size=4,
+        generator=torch.Generator(device="cpu").manual_seed(0),
+    ).images
+    image_grid = make_grid(images, rows=2, cols=2)
+    test_dir = Path(config["output_dir"]) / "samples"
+    test_dir.mkdir(parents=True, exist_ok=True)
+    image_grid.save(str(test_dir / f"{epoch:04d}.png"))
 
 
 def finetune_unconditional_diffuser(
     image_dir,
-    descriptions_file,
-    config=CONFIG
+    config=CONFIG,
 ):
-    print("\n" + "="*70)
-    print("LOADING MODELS")
-    print("="*70)
-
-    device = torch.device(f"cuda:{CONFIG['gpu']}" if torch.cuda.is_available() else "cpu")
-    print(f"Device: {device}")
-
-    print("Loading VAE...")
-    vae = AutoencoderKL.from_pretrained(
-        config["model_name"],
-        subfolder="vae",
-        torch_dtype=torch.float32,
-    )
-    vae = vae.to(device)
-    vae.requires_grad_(False)
-
-    print("Loading UNet...")
-    unet = UNet2DModel.from_pretrained(
-        config["model_name"],
-        subfolder="unet",
-        torch_dtype=torch.float32,
+    accelerator = Accelerator(
+        mixed_precision=config["mixed_precision"],
+        gradient_accumulation_steps=config["gradient_accumulation_steps"],
+        log_with="tensorboard",
+        project_dir=os.path.join(config["output_dir"], "logs"),
     )
 
-    print("Loading scheduler...")
-    noise_scheduler = DDPMScheduler.from_pretrained(
-        config["model_name"],
-        subfolder="scheduler"
+    if accelerator.is_main_process:
+        Path(config["output_dir"]).mkdir(parents=True, exist_ok=True)
+        accelerator.init_trackers("train_example")
+
+    model = UNet2DModel(
+        sample_size=config["image_size"],
+        in_channels=3,
+        out_channels=3,
+        layers_per_block=2,
+        block_out_channels=(128, 128, 256, 256, 512, 512),
+        down_block_types=(
+            "DownBlock2D",
+            "DownBlock2D",
+            "DownBlock2D",
+            "DownBlock2D",
+            "AttnDownBlock2D",
+            "DownBlock2D",
+        ),
+        up_block_types=(
+            "UpBlock2D",
+            "AttnUpBlock2D",
+            "UpBlock2D",
+            "UpBlock2D",
+            "UpBlock2D",
+            "UpBlock2D",
+        ),
     )
 
-    if config["use_lora"]:
-        print("Applying LoRA to UNet...")
-        lora_config = LoraConfig(
-            r=config["lora_rank"],
-            lora_alpha=config["lora_rank"],
-            target_modules=["to_k", "to_v", "to_q", "linear_1", "linear_2"],
-            lora_dropout=0.1,
-            bias="none"
-        )
-        unet = get_peft_model(unet, lora_config)
-        unet.print_trainable_parameters()
+    noise_scheduler = DDPMScheduler(num_train_timesteps=1000)
 
-    unet = unet.to(device)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config["learning_rate"])
 
-    optimizer = torch.optim.AdamW(
-        unet.parameters(),
-        lr=config["learning_rate"],
-        weight_decay=0.01
+    preprocess = transforms.Compose(
+        [
+            transforms.Resize((config["image_size"], config["image_size"])),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5], [0.5]),
+        ]
     )
 
-    print("\n" + "="*70)
-    print("LOADING DATASET")
-    print("="*70)
+    paths = sorted(Path(image_dir).glob("*.png"))
+    dataset = [(preprocess(Image.open(p).convert("RGB")), p.name) for p in paths]
+    print(f"Loaded {len(dataset)} images")
 
-    train_dataset, test_dataset = create_train_test_splits(
-        image_dir=image_dir,
-        descriptions_file=descriptions_file,
-        image_size=config["image_size"],
-        train_ratio=config.get("train_ratio", 0.5)
-    )
+    class ImageDataset(torch.utils.data.Dataset):
+        def __init__(self, data):
+            self.data = data
+
+        def __len__(self):
+            return len(self.data)
+
+        def __getitem__(self, idx):
+            return {"images": self.data[idx][0]}
+
+    train_dataset = ImageDataset(dataset)
 
     train_dataloader = DataLoader(
         train_dataset,
         batch_size=config["batch_size"],
         shuffle=True,
         num_workers=4,
-        pin_memory=True if device.type == "cuda" else False
     )
 
-    test_dataloader = DataLoader(
-        test_dataset,
-        batch_size=config["batch_size"],
-        shuffle=False,
-        num_workers=4,
-        pin_memory=True if device.type == "cuda" else False
+    lr_scheduler = get_cosine_schedule_with_warmup(
+        optimizer=optimizer,
+        num_warmup_steps=config["lr_warmup_steps"],
+        num_training_steps=(len(train_dataloader) * config["num_epochs"]),
     )
 
-    print(f"Train batches: {len(train_dataloader)}")
-    print(f"Test batches: {len(test_dataloader)}")
+    model, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+        model, optimizer, train_dataloader, lr_scheduler,
+    )
 
-    Path(config["output_dir"]).mkdir(parents=True, exist_ok=True)
-
-    print("\n" + "="*70)
-    print("STARTING TRAINING")
-    print("="*70)
-
-    unet.train()
-
+    global_step = 0
     epoch_losses = []
-    epoch_test_losses = []
 
     for epoch in range(config["num_epochs"]):
-        print(f"\n[Epoch {epoch + 1}/{config['num_epochs']}]")
+        progress_bar = tqdm(
+            total=len(train_dataloader),
+            disable=not accelerator.is_local_main_process,
+        )
+        progress_bar.set_description(f"Epoch {epoch}")
 
-        steps_per_epoch = config.get("steps_per_epoch") or len(train_dataloader)
-        progress_bar = tqdm(train_dataloader, desc="Training", total=steps_per_epoch)
         total_loss = 0
 
-        for batch_idx, batch in enumerate(progress_bar):
-            if batch_idx >= steps_per_epoch:
-                break
-            images = batch["image"].to(device)
+        for step, batch in enumerate(train_dataloader):
+            clean_images = batch["images"]
+            noise = torch.randn(clean_images.shape, device=clean_images.device)
+            bs = clean_images.shape[0]
 
-            with torch.no_grad():
-                latents = vae.encode(images).latent_dist.sample()
-                latents = latents * 0.18215
-
-            noise = torch.randn_like(latents)
             timesteps = torch.randint(
                 0,
-                len(noise_scheduler),
-                (latents.shape[0],),
-                device=device
+                noise_scheduler.config.num_train_timesteps,
+                (bs,),
+                device=clean_images.device,
+                dtype=torch.int64,
             )
 
-            noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+            noisy_images = noise_scheduler.add_noise(clean_images, noise, timesteps)
 
-            noise_pred = unet(noisy_latents, timesteps).sample
+            with accelerator.accumulate(model):
+                noise_pred = model(noisy_images, timesteps, return_dict=False)[0]
+                loss = F.mse_loss(noise_pred, noise)
+                accelerator.backward(loss)
 
-            loss = F.mse_loss(noise_pred, noise)
+                if accelerator.sync_gradients:
+                    accelerator.clip_grad_norm_(model.parameters(), 1.0)
+                optimizer.step()
+                lr_scheduler.step()
+                optimizer.zero_grad()
 
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(unet.parameters(), 1.0)
-            optimizer.step()
-            optimizer.zero_grad()
+            progress_bar.update(1)
+            total_loss += loss.detach().item()
+            logs = {
+                "loss": loss.detach().item(),
+                "lr": lr_scheduler.get_last_lr()[0],
+                "step": global_step,
+            }
+            progress_bar.set_postfix(**logs)
+            accelerator.log(logs, step=global_step)
+            global_step += 1
 
-            total_loss += loss.item()
-            progress_bar.set_postfix({
-                "loss": f"{loss.item():.4f}",
-                "avg_loss": f"{total_loss / (batch_idx + 1):.4f}"
-            })
-
-        avg_loss = total_loss / min(steps_per_epoch, len(train_dataloader))
+        avg_loss = total_loss / len(train_dataloader)
         epoch_losses.append(avg_loss)
-        print(f"Epoch {epoch + 1} average loss: {avg_loss:.4f}")
 
-        unet.eval()
-        test_loss = 0
-        with torch.no_grad():
-            for batch in test_dataloader:
-                images = batch["image"].to(device)
+        if accelerator.is_main_process:
+            pipeline = DDPMPipeline(
+                unet=accelerator.unwrap_model(model),
+                scheduler=noise_scheduler,
+            )
 
-                latents = vae.encode(images).latent_dist.sample()
-                latents = latents * 0.18215
+            if (epoch + 1) % config["save_image_epochs"] == 0 or epoch == config["num_epochs"] - 1:
+                evaluate(config, epoch, pipeline)
 
-                noise = torch.randn_like(latents)
-                timesteps = torch.randint(
-                    0,
-                    len(noise_scheduler),
-                    (latents.shape[0],),
-                    device=device
-                )
+            if (epoch + 1) % config["save_model_epochs"] == 0 or epoch == config["num_epochs"] - 1:
+                output_path = Path(config["output_dir"]) / f"checkpoint_epoch_{epoch + 1}"
+                output_path.mkdir(parents=True, exist_ok=True)
+                pipeline.save_pretrained(str(output_path))
+                noise_scheduler.save_pretrained(str(output_path / "scheduler"))
+                print(f"Checkpoint saved to {output_path}")
 
-                noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
-                noise_pred = unet(noisy_latents, timesteps).sample
+        print(f"Epoch {epoch + 1}/{config['num_epochs']} average loss: {avg_loss:.4f}")
 
-                test_loss += F.mse_loss(noise_pred, noise).item()
+    accelerator.end_training()
 
-        avg_test_loss = test_loss / len(test_dataloader)
-        epoch_test_losses.append(avg_test_loss)
-        print(f"Epoch {epoch + 1} test loss: {avg_test_loss:.4f}")
-        unet.train()
+    if accelerator.is_main_process:
+        final_path = Path(config["output_dir"]) / "final"
+        final_path.mkdir(parents=True, exist_ok=True)
+        pipeline = DDPMPipeline(
+            unet=accelerator.unwrap_model(model),
+            scheduler=noise_scheduler,
+        )
+        pipeline.save_pretrained(str(final_path))
 
-        output_path = Path(config["output_dir"]) / f"checkpoint_epoch_{epoch + 1}"
-        output_path.mkdir(parents=True, exist_ok=True)
+        training_log = {
+            "config": config,
+            "train_losses": epoch_losses,
+        }
+        log_path = Path(config["output_dir"]) / "training_log.json"
+        with open(log_path, "w") as f:
+            json.dump(training_log, f, indent=2)
+        print(f"Training log saved to {log_path}")
+        print(f"\n✓ Finetuning complete! Model saved to {final_path}")
 
-        print(f"\nSaving checkpoint to {output_path}...")
-
-        if config["use_lora"]:
-            unet.save_pretrained(str(output_path / "unet_lora"))
-        else:
-            unet.save_pretrained(str(output_path / "unet"))
-
-        noise_scheduler.save_pretrained(str(output_path / "scheduler"))
-
-    print("\n" + "="*70)
-    print("SAVING FINAL MODEL")
-    print("="*70)
-
-    final_path = Path(config["output_dir"]) / "final"
-    final_path.mkdir(parents=True, exist_ok=True)
-
-    if config["use_lora"]:
-        unet.save_pretrained(str(final_path / "unet_lora"))
-    else:
-        unet.save_pretrained(str(final_path / "unet"))
-
-    noise_scheduler.save_pretrained(str(final_path / "scheduler"))
-    vae.save_pretrained(str(final_path / "vae"))
-
-    save_loss_plot(epoch_losses, config["output_dir"])
-
-    print("\n" + "="*70)
-    print("GENERATING DENOISING SEQUENCES")
-    print("="*70)
-    unet.eval()
-    training_log = {
-        "config": config,
-        "train_losses": epoch_losses,
-        "test_losses": epoch_test_losses,
-    }
-    log_path = Path(config["output_dir"]) / "training_log.json"
-    with open(log_path, "w") as f:
-        json.dump(training_log, f, indent=2)
-    print(f"Training log saved to {log_path}")
-
-    save_denoising_sequence(
-        unet, vae, noise_scheduler, device,
-        config["output_dir"], image_size=config["image_size"],
-    )
-
-    print(f"\n✓ Finetuning complete! Model saved to {final_path}")
-
-    return {
-        "unet": unet,
-        "vae": vae,
-        "noise_scheduler": noise_scheduler,
-        "device": device
-    }
+    return {"pipeline": pipeline if accelerator.is_main_process else None}
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Finetune unconditional diffuser model (images only, no text)")
-    parser.add_argument("--output-dir", type=str, default=CONFIG["output_dir"],
-                        help="Name of the model output folder (default: vanilla_finetuned_uncond)")
-    parser.add_argument("--model-name", type=str, default=CONFIG["model_name"],
-                        help="Base model name or path (default: stable-diffusion-v1-5/stable-diffusion-v1-5)")
-    parser.add_argument("--steps-per-epoch", type=int, default=None,
-                        help="Limit training steps per epoch (default: all batches)")
-    parser.add_argument("--train-ratio", type=float, default=CONFIG["train_ratio"],
-                        help="Ratio of data for training (default: 0.5)")
-    parser.add_argument("--lora-rank", type=int, default=CONFIG["lora_rank"],
-                        help="LoRA rank for fine-tuning (default: 16)")
+    parser = argparse.ArgumentParser(description="Finetune unconditional diffuser model")
+    parser.add_argument("--output-dir", type=str, default=CONFIG["output_dir"])
+    parser.add_argument("--image-dir", type=str, default="data/cropped_artifacts")
+    parser.add_argument("--batch-size", type=int, default=CONFIG["batch_size"])
+    parser.add_argument("--num-epochs", type=int, default=CONFIG["num_epochs"])
+    parser.add_argument("--learning-rate", type=float, default=CONFIG["learning_rate"])
+    parser.add_argument("--image-size", type=int, default=CONFIG["image_size"])
     args = parser.parse_args()
 
     CONFIG["output_dir"] = args.output_dir
-    CONFIG["model_name"] = args.model_name
-    CONFIG["steps_per_epoch"] = args.steps_per_epoch
-    CONFIG["train_ratio"] = args.train_ratio
-    CONFIG["lora_rank"] = args.lora_rank
-    CONFIG["use_lora"] = args.lora_rank > 0
+    CONFIG["batch_size"] = args.batch_size
+    CONFIG["num_epochs"] = args.num_epochs
+    CONFIG["learning_rate"] = args.learning_rate
+    CONFIG["image_size"] = args.image_size
 
-    print("Make sure you have run: python prepare_dataset.py\n")
-
-    models = finetune_unconditional_diffuser(
-        image_dir="data/cropped_artifacts",
-        descriptions_file="data/all_artifacts.json",
-        config=CONFIG
+    finetune_unconditional_diffuser(
+        image_dir=args.image_dir,
+        config=CONFIG,
     )
-
-    print("\n✓ Finetuning complete!")
-    print(f"Models saved in: {CONFIG['output_dir']}")
