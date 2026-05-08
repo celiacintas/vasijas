@@ -119,7 +119,7 @@ def finetune_unconditional_diffuser(
         train_dataset,
         batch_size=config["batch_size"],
         shuffle=True,
-        num_workers=4,
+        num_workers=0,
     )
 
     lr_scheduler = get_cosine_schedule_with_warmup(
