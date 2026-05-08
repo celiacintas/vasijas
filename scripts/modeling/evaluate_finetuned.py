@@ -115,7 +115,7 @@ def find_lora_checkpoints(base_dir="."):
         if p.is_dir():
             rank = p.parent.name.replace("vanilla_finetuned_lora_", "")
             checkpoints.append({"path": str(p), "rank": rank})
-    for p in sorted(Path(base_dir).glob("vanilla_finetuned_full/final")):
+    for p in sorted(Path(base_dir).glob("vanilla_finetuned_uncond/final")):
         if p.is_dir():
             checkpoints.append({"path": str(p), "rank": "full"})
     return checkpoints
