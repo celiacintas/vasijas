@@ -6,7 +6,7 @@ from pathlib import Path
 from PIL import Image
 from tqdm import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
-from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
+from diffusers import AutoencoderKL, UNet2DConditionModel, UNet2DModel, DDPMScheduler
 from peft import PeftModel
 from torchmetrics.image.fid import FrechetInceptionDistance
 from torchvision.transforms import ToTensor
@@ -25,6 +25,24 @@ PROMPTS = [
 
 def load_finetuned_models(checkpoint_dir, device):
     checkpoint_path = Path(checkpoint_dir)
+    model_index = checkpoint_path / "model_index.json"
+
+    is_uncond = (
+        model_index.exists()
+        and json.loads(model_index.read_text()).get("_class_name") == "DDPMPipeline"
+    )
+
+    if is_uncond:
+        noise_scheduler = DDPMScheduler.from_pretrained(str(checkpoint_path / "scheduler"))
+        unet = UNet2DModel.from_pretrained(
+            str(checkpoint_path / "unet"),
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
+        ).to(device).eval()
+        return {
+            "noise_scheduler": noise_scheduler,
+            "unet": unet,
+            "device": device,
+        }
 
     tokenizer = CLIPTokenizer.from_pretrained(str(checkpoint_path / "tokenizer"))
     text_encoder = CLIPTextModel.from_pretrained(
@@ -60,6 +78,36 @@ def load_finetuned_models(checkpoint_dir, device):
         "noise_scheduler": noise_scheduler,
         "device": device,
     }
+
+
+def generate_unconditional_images(models, num_images=9, num_inference_steps=100, seed=None):
+    unet = models["unet"]
+    noise_scheduler = models["noise_scheduler"]
+    device = models["device"]
+    dtype = unet.dtype
+
+    if seed is not None:
+        torch.manual_seed(seed)
+
+    noise_scheduler.set_timesteps(num_inference_steps)
+    image_size = unet.config.sample_size
+
+    images = []
+    for i in range(num_images):
+        noise = torch.randn((1, unet.config.in_channels, image_size, image_size), device=device, dtype=dtype)
+        latents = noise
+
+        for t in tqdm(noise_scheduler.timesteps, desc=f"Denoising [{i+1}/{num_images}]", leave=False):
+            with torch.no_grad():
+                noise_pred = unet(latents, t).sample
+            latents = noise_scheduler.step(noise_pred, t, latents).prev_sample
+
+        img = (latents / 2 + 0.5).clamp(0, 1)
+        img = img.permute(0, 2, 3, 1).detach().cpu().to(torch.float32).numpy()[0]
+        img = (img * 255).round().clip(0, 255).astype("uint8")
+        images.append(Image.fromarray(img))
+
+    return images
 
 
 def compute_fid(real_images, fake_images, device):
@@ -117,7 +165,7 @@ def find_lora_checkpoints(base_dir="."):
             checkpoints.append({"path": str(p), "rank": rank})
     for p in sorted(Path(base_dir).glob("vanilla_finetuned_uncond/final")):
         if p.is_dir():
-            checkpoints.append({"path": str(p), "rank": "full"})
+            checkpoints.append({"path": str(p), "rank": "uncond"})
     return checkpoints
 
 
@@ -141,8 +189,8 @@ def evaluate_checkpoints(
     for ckpt in checkpoints:
         ckpt_path = ckpt["path"]
         rank = ckpt["rank"]
+        label = "uncond" if rank == "uncond" else f"LoRA rank={rank}"
         print(f"\n{'='*70}")
-        label = "full" if rank == "full" else f"LoRA rank={rank}"
         print(f"Evaluating {label} ({ckpt_path})")
         print(f"{'='*70}")
 
@@ -153,31 +201,45 @@ def evaluate_checkpoints(
         all_seeds = []
         all_gen_tensors = []
 
-        for i, prompt in enumerate(tqdm(PROMPTS, desc="Generating images")):
-            for j in range(num_generated_per_prompt):
-                seed = i * num_generated_per_prompt + j + 42
-                all_seeds.append(seed)
-                imgs = generate_images(
-                    [prompt], models,
-                    num_inference_steps=num_inference_steps,
-                    guidance_scale=guidance_scale,
-                    seed=seed,
-                )
-                _, pil_img = imgs[0]
+        if rank == "uncond":
+            num_uncond = len(PROMPTS) * num_generated_per_prompt
+            uncond_imgs = generate_unconditional_images(
+                models, num_images=num_uncond,
+                num_inference_steps=num_inference_steps, seed=42,
+            )
+            for pil_img in uncond_imgs:
                 all_gen_pil.append(pil_img)
                 all_gen_tensors.append(ToTensor()(pil_img))
-                used_prompts.append(prompt)
+                used_prompts.append("")
+        else:
+            for i, prompt in enumerate(tqdm(PROMPTS, desc="Generating images")):
+                for j in range(num_generated_per_prompt):
+                    seed = i * num_generated_per_prompt + j + 42
+                    all_seeds.append(seed)
+                    imgs = generate_images(
+                        [prompt], models,
+                        num_inference_steps=num_inference_steps,
+                        guidance_scale=guidance_scale,
+                        seed=seed,
+                    )
+                    _, pil_img = imgs[0]
+                    all_gen_pil.append(pil_img)
+                    all_gen_tensors.append(ToTensor()(pil_img))
+                    used_prompts.append(prompt)
 
         print(f"Generated {len(all_gen_pil)} images")
 
         fid_score = compute_fid(real_images, all_gen_tensors, device)
         print(f"FID: {fid_score:.4f}")
 
-        clip_mean, clip_per_image = compute_clip_score(all_gen_pil, used_prompts, device)
+        if rank == "uncond":
+            clip_mean, clip_per_image = 0.0, []
+        else:
+            clip_mean, clip_per_image = compute_clip_score(all_gen_pil, used_prompts, device)
         print(f"CLIP Score (mean): {clip_mean:.4f}")
 
-        rank_num = 0 if rank == "full" else int(rank)
-        label = f"full" if rank == "full" else f"lora_{rank}"
+        rank_num = 0 if rank == "uncond" else int(rank)
+        label = rank if rank == "uncond" else f"lora_{rank}"
         results[label] = {
             "rank": rank_num,
             "checkpoint": ckpt_path,
@@ -208,7 +270,7 @@ def evaluate_checkpoints(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluate finetuned LoRA models with FID and CLIP score")
+    parser = argparse.ArgumentParser(description="Evaluate finetuned models with FID and CLIP score")
     parser.add_argument("--image-dir", type=str, default="data/cropped_artifacts")
     parser.add_argument("--descriptions-file", type=str, default="data/all_artifacts.json")
     parser.add_argument("--num-generated-per-prompt", type=int, default=5,
@@ -217,7 +279,7 @@ if __name__ == "__main__":
     parser.add_argument("--guidance-scale", type=float, default=7.5)
     parser.add_argument("--output-file", type=str, default="evaluation_results.json")
     parser.add_argument("--folder", type=str, default=None,
-                        help="Evaluate a single folder (e.g. vanilla_finetuned_full/final or vanilla_finetuned_lora_256/final)")
+                        help="Evaluate a single folder (e.g. vanilla_finetuned_lora_256/final or vanilla_finetuned_uncond/final)")
     args = parser.parse_args()
 
     if args.folder:
@@ -231,7 +293,7 @@ if __name__ == "__main__":
     else:
         checkpoints = find_lora_checkpoints()
         if not checkpoints:
-            print("No finetuned checkpoints found matching 'vanilla_finetuned_lora_*/final' or 'vanilla_finetuned_full/final'")
+            print("No finetuned checkpoints found matching 'vanilla_finetuned_lora_*/final' or 'vanilla_finetuned_uncond/final'")
             exit(1)
 
     print(f"Found {len(checkpoints)} checkpoint(s):")
