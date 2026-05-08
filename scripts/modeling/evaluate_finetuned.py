@@ -196,12 +196,14 @@ def evaluate_checkpoints(
 
         models = load_finetuned_models(ckpt_path, device)
 
+        is_uncond = "tokenizer" not in models
+
         all_gen_pil = []
         used_prompts = []
         all_seeds = []
         all_gen_tensors = []
 
-        if rank == "uncond":
+        if is_uncond:
             num_uncond = len(PROMPTS) * num_generated_per_prompt
             uncond_imgs = generate_unconditional_images(
                 models, num_images=num_uncond,
@@ -232,14 +234,14 @@ def evaluate_checkpoints(
         fid_score = compute_fid(real_images, all_gen_tensors, device)
         print(f"FID: {fid_score:.4f}")
 
-        if rank == "uncond":
+        if is_uncond:
             clip_mean, clip_per_image = 0.0, []
         else:
             clip_mean, clip_per_image = compute_clip_score(all_gen_pil, used_prompts, device)
         print(f"CLIP Score (mean): {clip_mean:.4f}")
 
-        rank_num = 0 if rank == "uncond" else int(rank)
-        label = rank if rank == "uncond" else f"lora_{rank}"
+        rank_num = 0 if is_uncond else int(rank)
+        label = "uncond" if is_uncond else f"lora_{rank}"
         results[label] = {
             "rank": rank_num,
             "checkpoint": ckpt_path,
