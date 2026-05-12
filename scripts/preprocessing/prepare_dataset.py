@@ -193,6 +193,48 @@ def verify_dataset(
     print(f"\n✓ Dataset verification complete!")
     return True
 
+def copy_matched_images(
+    image_dir="cropped_artifacts",
+    descriptions_file="all_artifacts.json",
+    output_image_dir="data/artifacts_with_descriptions"
+):
+    """Copy images that have descriptions to a separate folder
+    
+    Args:
+        image_dir: Source directory with all images
+        descriptions_file: JSONL file with matched descriptions
+        output_image_dir: Destination directory for filtered images
+    """
+    import shutil
+
+    image_dir = Path(image_dir)
+    descriptions_file = Path(descriptions_file)
+    output_image_dir = Path(output_image_dir)
+
+    if not descriptions_file.exists():
+        print(f"❌ JSONL file not found: {descriptions_file}")
+        return False
+
+    entries = []
+    with open(descriptions_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            entry = json.loads(line)
+            entries.append(entry)
+
+    output_image_dir.mkdir(parents=True, exist_ok=True)
+
+    copied = 0
+    for entry in entries:
+        src = image_dir / entry["filename"]
+        if src.exists():
+            dst = output_image_dir / entry["filename"]
+            shutil.copy2(src, dst)
+            copied += 1
+
+    print(f"✓ Copied {copied} images to {output_image_dir}")
+    return True
+
+
 # Main execution
 if __name__ == "__main__":
     import sys
@@ -202,13 +244,14 @@ if __name__ == "__main__":
     descriptions_csv = "data/artifacts_subsets.csv"
     output_jsonl = "data/all_artifacts.json"
     output_csv = "data/all_artifacts_comprehensive.csv"
+    output_image_dir = "data/artifacts_with_descriptions"
     
     print("="*70)
     print("PREPARING DATASET FOR FINETUNING")
     print("="*70)
     
     # Step 1: Create JSONL from CSV
-    print("\n[1/3] Creating JSONL file...")
+    print("\n[1/4] Creating JSONL file...")
     success = create_descriptions_jsonl(
         image_dir=image_dir,
         descriptions_csv=descriptions_csv,
@@ -219,7 +262,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Step 2: Create comprehensive CSV
-    print("\n[2/3] Creating comprehensive CSV...")
+    print("\n[2/4] Creating comprehensive CSV...")
     create_comprehensive_csv(
         image_dir=image_dir,
         descriptions_csv=descriptions_csv,
@@ -227,10 +270,18 @@ if __name__ == "__main__":
     )
     
     # Step 3: Verify dataset
-    print("\n[3/3] Verifying dataset...")
+    print("\n[3/4] Verifying dataset...")
     verify_dataset(
         image_dir=image_dir,
         descriptions_file=output_jsonl
+    )
+    
+    # Step 4: Copy matched images
+    print("\n[4/4] Copying matched images...")
+    copy_matched_images(
+        image_dir=image_dir,
+        descriptions_file=output_jsonl,
+        output_image_dir=output_image_dir,
     )
     
     print("\n" + "="*70)
@@ -239,5 +290,6 @@ if __name__ == "__main__":
     print(f"\nYou can now use the following in your finetuning script:")
     print(f"  image_dir: '{image_dir}'")
     print(f"  descriptions_file: '{output_jsonl}'")
+    print(f"  filtered_images: '{output_image_dir}'")
     print(f"\nRun finetuning with:")
     print(f"  uv run python scripts/modeling/finetune_vanilla_diffuser.py")

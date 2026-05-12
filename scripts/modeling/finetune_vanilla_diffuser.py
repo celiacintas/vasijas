@@ -448,7 +448,7 @@ if __name__ == "__main__":
     
     # Finetune
     models = finetune_vanilla_diffuser(
-        image_dir="data/cropped_artifacts",
+        image_dir="data/artifacts_with_descriptions/",
         descriptions_file="data/all_artifacts.json",
         config=CONFIG
     )
