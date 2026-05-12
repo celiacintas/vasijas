@@ -11,17 +11,10 @@ from peft import PeftModel
 from torchmetrics.image.fid import FrechetInceptionDistance
 from torchvision.transforms import ToTensor
 import sys 
-
+import random
 sys.path.insert(0, str(Path(__file__).parent))
 from ceramic_dataset import create_train_test_splits
 from generate_from_finetuned import generate_images
-
-PROMPTS = [
-    "a ceramic plate with iberian geometric, linear-based decoration with alternating cream and red fields; hatching and stippling create depth and visual interest across fragmented vessel.",
-    "a ceramic plate with a central solid red circle and a concentric design featuring an outer ring of alternating red and white rectangular segments arranged radially geometric, highly symmetrical composition with regular spacing",
-    "a ceramic vessel with graduated complexity from base to rim, with decoration increasing in density toward the top. The combination of simple lines and crosshatched triangles creates a dynamic visual hierarchy. The vessel demonstrates controlled, red geometric patterning typical of iberian ceramic design."
-]
-
 
 def load_finetuned_models(checkpoint_dir, device):
     checkpoint_path = Path(checkpoint_dir)
@@ -122,18 +115,14 @@ def compute_fid(real_images, fake_images, device):
 
 
 def compute_clip_score(images, prompts, device):
-    from transformers import CLIPModel, CLIPProcessor
+    from torchmetrics.multimodal.clip_score import CLIPScore
 
-    model = CLIPModel.from_pretrained("zer0int/LongCLIP-L-Diffusers").to(device)
-    processor = CLIPProcessor.from_pretrained("zer0int/LongCLIP-L-Diffusers")
+    metric = CLIPScore(model_name_or_path="zer0int/LongCLIP-L-Diffusers").to(device)
 
     scores = []
     for img, prompt in zip(images, prompts):
-        inputs = processor(text=[prompt], images=img, return_tensors="pt", padding=True).to(device)
-        with torch.no_grad():
-            outputs = model(**inputs)
-            logits_per_image = outputs.logits_per_image
-            scores.append(logits_per_image.item())
+        score = metric(img, prompt)
+        scores.append(score.detach().round().item())
 
     mean_score = np.mean(scores) if scores else 0.0
     return mean_score, scores
@@ -179,7 +168,18 @@ def evaluate_checkpoints(
     output_file="evaluation_results.json",
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    num_real_for_fid = max(len(PROMPTS) * num_generated_per_prompt, 50)
+
+    
+
+    train_dataset, test_dataset = create_train_test_splits(
+        image_dir, descriptions_file, image_size=256, train_ratio=0.5, seed=42
+    )
+    test_prompts = [test_dataset[i]["text"] for i in range(len(test_dataset))]
+    random.seed(42)
+    prompts = random.sample(test_prompts, min(5, len(test_prompts)))
+    print(f"Using {len(prompts)} prompts from test split")
+
+    num_real_for_fid = max(len(prompts) * num_generated_per_prompt, 50)
 
     real_images = collect_real_images(image_dir, descriptions_file, num_real_for_fid, device)
     print(f"Collected {len(real_images)} real images for FID reference")
@@ -204,7 +204,7 @@ def evaluate_checkpoints(
         all_gen_tensors = []
 
         if is_uncond:
-            num_uncond = len(PROMPTS) * num_generated_per_prompt
+            num_uncond = len(prompts) * num_generated_per_prompt
             uncond_imgs = generate_unconditional_images(
                 models, num_images=num_uncond,
                 num_inference_steps=num_inference_steps, seed=42,
@@ -214,7 +214,7 @@ def evaluate_checkpoints(
                 all_gen_tensors.append(ToTensor()(pil_img))
                 used_prompts.append("")
         else:
-            for i, prompt in enumerate(tqdm(PROMPTS, desc="Generating images")):
+            for i, prompt in enumerate(tqdm(prompts, desc="Generating images")):
                 for j in range(num_generated_per_prompt):
                     seed = i * num_generated_per_prompt + j + 42
                     all_seeds.append(seed)
@@ -250,7 +250,7 @@ def evaluate_checkpoints(
             "clip_score_per_image": clip_per_image,
             "num_generated": len(all_gen_pil),
             "num_real_for_fid": len(real_images),
-            "prompts": PROMPTS,
+            "prompts": prompts,
             "seeds": all_seeds,
             "num_inference_steps": num_inference_steps,
             "guidance_scale": guidance_scale,
