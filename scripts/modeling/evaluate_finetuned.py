@@ -104,6 +104,9 @@ def generate_unconditional_images(models, num_images=9, num_inference_steps=100,
 
 
 def compute_fid(real_images, fake_images, device):
+    if len(real_images) < 2 or len(fake_images) < 2:
+        print(f"  ⚠ FID skipped: need ≥2 samples per distribution (real={len(real_images)}, fake={len(fake_images)})")
+        return 0.0
     fid = FrechetInceptionDistance(feature=64).to(device)
     for img in real_images:
         img_255 = (img.unsqueeze(0).to(device) * 255).to(torch.uint8)
@@ -136,13 +139,12 @@ def collect_real_images(image_dir, descriptions_file, num_images, device):
         train_ratio=0.5,
     )
     real_images = []
-    count = 0
     for item in test_dataset:
-        if count >= num_images:
+        if len(real_images) >= num_images:
             break
         img = item["image"]
+        img = (img + 1) / 2
         real_images.append(img)
-        count += 1
     return real_images
 
 
@@ -179,9 +181,7 @@ def evaluate_checkpoints(
     prompts = random.sample(test_prompts, min(5, len(test_prompts)))
     print(f"Using {len(prompts)} prompts from test split")
 
-    num_real_for_fid = max(len(prompts) * num_generated_per_prompt, 50)
-
-    real_images = collect_real_images(image_dir, descriptions_file, num_real_for_fid, device)
+    real_images = collect_real_images(image_dir, descriptions_file, 10_000, device)
     print(f"Collected {len(real_images)} real images for FID reference")
 
     results = {}
