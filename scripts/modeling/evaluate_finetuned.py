@@ -9,7 +9,7 @@ from transformers import CLIPTextModel, CLIPTokenizer
 from diffusers import AutoencoderKL, UNet2DConditionModel, UNet2DModel, DDPMScheduler
 from peft import PeftModel
 from torchmetrics.image.fid import FrechetInceptionDistance
-from torchvision.transforms import ToTensor, ToPILImage
+from torchvision.transforms import ToTensor
 import sys 
 import random
 sys.path.insert(0, str(Path(__file__).parent))
@@ -124,8 +124,10 @@ def compute_clip_score(images, prompts, device):
 
     scores = []
     for img, prompt in zip(images, prompts):
-        if not isinstance(img, Image.Image):
-            img = ToPILImage()(img)
+        if isinstance(img, Image.Image):
+            img = ToTensor()(img).unsqueeze(0).to(device)
+        elif isinstance(img, torch.Tensor) and img.ndim == 3:
+            img = img.unsqueeze(0).to(device)
         score = metric(img, prompt)
         scores.append(score.detach().round().item())
 
