@@ -273,7 +273,7 @@ def evaluate_checkpoints(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate finetuned models with FID and CLIP score")
-    parser.add_argument("--image-dir", type=str, default="data/cropped_artifacts")
+    parser.add_argument("--image-dir", type=str, default="data/artifacts_with_descriptions")
     parser.add_argument("--descriptions-file", type=str, default="data/all_artifacts.json")
     parser.add_argument("--num-generated-per-prompt", type=int, default=5,
                         help="How many images to generate per prompt for metrics")
