@@ -19,13 +19,15 @@ class CeramicArtifactDataset(Dataset):
                     if line.strip():
                         try:
                             data = json.loads(line)
-                            self.descriptions[data['filename']] = data['description']
+                            desc = data.get('description', '')
+                            if desc.strip():
+                                self.descriptions[data['filename']] = desc
                         except json.JSONDecodeError:
                             continue
         
-        self.image_paths = sorted(self.image_dir.glob("*.png"))
-        print(f"Loaded {len(self.image_paths)} images")
-        print(f"Loaded {len(self.descriptions)} descriptions")
+        all_images = sorted(self.image_dir.glob("*.png"))
+        self.image_paths = [p for p in all_images if p.name in self.descriptions]
+        print(f"Loaded {len(self.image_paths)} images with descriptions (filtered {len(all_images) - len(self.image_paths)} without)")
     
     def __len__(self):
         return len(self.image_paths)
@@ -42,10 +44,7 @@ class CeramicArtifactDataset(Dataset):
             ).permute(2, 0, 1).float()
             image_array = image_array / 127.5 - 1
             
-            description = self.descriptions.get(
-                image_path.name,
-                "ceramic artifact with decorative patterns"
-            )
+            description = self.descriptions[image_path.name]
             
             return {
                 "image": image_array,
@@ -56,7 +55,7 @@ class CeramicArtifactDataset(Dataset):
             print(f"Error loading {image_path}: {e}")
             return {
                 "image": torch.randn(3, self.image_size, self.image_size),
-                "text": "ceramic artifact",
+                "text": "",
                 "filename": image_path.name
             }
 

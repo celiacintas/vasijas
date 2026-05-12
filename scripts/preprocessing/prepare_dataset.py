@@ -48,39 +48,25 @@ def create_descriptions_jsonl(
     
     # Create JSONL file
     matched_count = 0
-    unmatched_images = []
     
     with open(output_file, 'w', encoding='utf-8') as f:
         for image_file in sorted(image_files):
-            # Try to find matching description
-            description = descriptions_data.get(
-                image_file,
-                "ceramic artifact with decorative patterns"
-            )
+            if image_file not in descriptions_data:
+                continue
             
-            # Create JSON entry
+            description = descriptions_data[image_file]
+            
             entry = {
                 "filename": image_file,
                 "image_path": str((image_dir / image_file).absolute()),
                 "description": description
             }
             
-            # Write to JSONL
             f.write(json.dumps(entry) + '\n')
-            
-            if image_file in descriptions_data:
-                matched_count += 1
-            else:
-                unmatched_images.append(image_file)
+            matched_count += 1
     
     print(f"✓ Created {output_file}")
-    print(f"  Matched descriptions: {matched_count}/{len(image_files)}")
-    print(f"  Using default description: {len(unmatched_images)}")
-    
-    if unmatched_images and len(unmatched_images) <= 10:
-        print(f"\n  Unmatched images:")
-        for img in unmatched_images:
-            print(f"    - {img}")
+    print(f"  Written entries: {matched_count} (skipped {len(image_files) - matched_count} without descriptions)")
     
     return True
 
@@ -213,7 +199,7 @@ if __name__ == "__main__":
     
     # Define paths
     image_dir = "data/cropped_artifacts"
-    descriptions_csv = "data/artifact_descriptions.csv"
+    descriptions_csv = "data/artifacts_subsets.csv"
     output_jsonl = "data/all_artifacts.json"
     output_csv = "data/all_artifacts_comprehensive.csv"
     
