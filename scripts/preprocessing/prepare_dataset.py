@@ -5,7 +5,8 @@ from pathlib import Path
 def create_descriptions_jsonl(
     image_dir="cropped_artifacts",
     descriptions_csv="artifact_descriptions.csv",
-    output_file="all_artifacts.json"
+    output_file="all_artifacts.json",
+    output_image_dir=None,
 ):
     """Convert CSV descriptions to JSONL format for CeramicArtifactDataset
     
@@ -13,10 +14,12 @@ def create_descriptions_jsonl(
         image_dir: Directory containing cropped artifact images
         descriptions_csv: Path to CSV file with descriptions
         output_file: Output JSONL file path
+        output_image_dir: Directory for image_path in JSON (defaults to image_dir)
     """
     
     image_dir = Path(image_dir)
     descriptions_csv = Path(descriptions_csv)
+    output_image_dir = Path(output_image_dir) if output_image_dir else image_dir
     
     # Check if files exist
     if not image_dir.exists():
@@ -58,7 +61,7 @@ def create_descriptions_jsonl(
             
             entry = {
                 "filename": image_file,
-                "image_path": str((image_dir / image_file).absolute()),
+                "image_path": str((output_image_dir / image_file).absolute()),
                 "description": description
             }
             
@@ -255,7 +258,8 @@ if __name__ == "__main__":
     success = create_descriptions_jsonl(
         image_dir=image_dir,
         descriptions_csv=descriptions_csv,
-        output_file=output_jsonl
+        output_file=output_jsonl,
+        output_image_dir=output_image_dir,
     )
     
     if not success:
