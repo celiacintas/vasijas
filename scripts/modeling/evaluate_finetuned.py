@@ -160,7 +160,7 @@ def find_lora_checkpoints(base_dir="."):
 
 def evaluate_checkpoints(
     checkpoints,
-    image_dir="data/cropped_artifacts",
+    image_dir="data/artifacts_with_descriptions",
     descriptions_file="data/all_artifacts.json",
     num_inference_steps=100,
     guidance_scale=7.5,
