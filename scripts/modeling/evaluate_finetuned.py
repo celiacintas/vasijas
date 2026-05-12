@@ -118,18 +118,18 @@ def compute_fid(real_images, fake_images, device):
 
 
 def compute_clip_score(images, prompts, device):
-    from torchmetrics.multimodal.clip_score import CLIPScore
+    from transformers import CLIPModel, CLIPProcessor
 
-    metric = CLIPScore(model_name_or_path="zer0int/LongCLIP-L-Diffusers").to(device)
+    model = CLIPModel.from_pretrained("zer0int/LongCLIP-L-Diffusers").to(device)
+    processor = CLIPProcessor.from_pretrained("zer0int/LongCLIP-L-Diffusers")
 
     scores = []
     for img, prompt in zip(images, prompts):
-        if isinstance(img, Image.Image):
-            img = ToTensor()(img).unsqueeze(0).to(device)
-        elif isinstance(img, torch.Tensor) and img.ndim == 3:
-            img = img.unsqueeze(0).to(device)
-        score = metric(img, prompt)
-        scores.append(score.detach().round().item())
+        inputs = processor(text=[prompt], images=img, return_tensors="pt", padding=True).to(device)
+        with torch.no_grad():
+            outputs = model(**inputs)
+            logits_per_image = outputs.logits_per_image
+            scores.append(logits_per_image.item())
 
     mean_score = np.mean(scores) if scores else 0.0
     return mean_score, scores
