@@ -30,7 +30,7 @@ def load_qwen25_vl(device, dtype):
         model_id,
         torch_dtype=dtype,
         device_map=device,
-        attn_implementation="flash_attention_2",
+        attn_implementation="eager",
     )
     processor = AutoProcessor.from_pretrained(model_id)
     return model, processor, model_id
