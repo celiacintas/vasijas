@@ -71,7 +71,8 @@ def load_glm4v(device, dtype):
 
     def _patched_getattr(self, name):
         if name == "all_tied_weights_keys":
-            return getattr(self, "_tied_weights_keys", {})
+            keys = getattr(self, "_tied_weights_keys", {})
+            return {} if keys is None else keys
         return orig_getattr(self, name)
 
     nn.Module.__getattr__ = _patched_getattr
@@ -194,7 +195,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
     sample_images = get_sample_images()
-    prompt = "In this image you can see an archeological ceramic artifact, can you tell me to which culture belongs?"
+    prompt = "In this image you can see an archeological ceramic artifact, can you tell me to which culture belongs to in one sentence?"
 
     for name, loader in LOADERS.items():
         print(f"\n{'=' * 70}")
