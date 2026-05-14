@@ -21,7 +21,7 @@ CONFIG = {
     "output_dir": "vanilla_finetuned",
     "learning_rate": 1e-5,
     "batch_size": 16,
-    "num_epochs": 5,
+    "num_epochs": 8,
     "image_size": 256,
     "use_lora": True,
     "lora_rank": 2048,
