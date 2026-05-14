@@ -10,11 +10,14 @@ from diffusers import AutoencoderKL, UNet2DConditionModel, UNet2DModel, DDPMSche
 from peft import PeftModel
 from torchmetrics.image.fid import FrechetInceptionDistance
 from torchvision.transforms import ToTensor
-import sys 
-import random
-sys.path.insert(0, str(Path(__file__).parent))
 from ceramic_dataset import create_train_test_splits
 from generate_from_finetuned import generate_images
+
+import sys
+import random
+
+sys.path.insert(0, str(Path(__file__).parent))
+
 
 def load_finetuned_models(checkpoint_dir, device):
     checkpoint_path = Path(checkpoint_dir)
@@ -26,11 +29,17 @@ def load_finetuned_models(checkpoint_dir, device):
     )
 
     if is_uncond:
-        noise_scheduler = DDPMScheduler.from_pretrained(str(checkpoint_path / "scheduler"))
-        unet = UNet2DModel.from_pretrained(
-            str(checkpoint_path / "unet"),
-            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
-        ).to(device).eval()
+        noise_scheduler = DDPMScheduler.from_pretrained(
+            str(checkpoint_path / "scheduler")
+        )
+        unet = (
+            UNet2DModel.from_pretrained(
+                str(checkpoint_path / "unet"),
+                torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
+            )
+            .to(device)
+            .eval()
+        )
         return {
             "noise_scheduler": noise_scheduler,
             "unet": unet,
@@ -38,14 +47,22 @@ def load_finetuned_models(checkpoint_dir, device):
         }
 
     tokenizer = CLIPTokenizer.from_pretrained(str(checkpoint_path / "tokenizer"))
-    text_encoder = CLIPTextModel.from_pretrained(
-        str(checkpoint_path / "text_encoder"),
-        torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
-    ).to(device).eval()
-    vae = AutoencoderKL.from_pretrained(
-        str(checkpoint_path / "vae"),
-        torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
-    ).to(device).eval()
+    text_encoder = (
+        CLIPTextModel.from_pretrained(
+            str(checkpoint_path / "text_encoder"),
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
+        )
+        .to(device)
+        .eval()
+    )
+    vae = (
+        AutoencoderKL.from_pretrained(
+            str(checkpoint_path / "vae"),
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
+        )
+        .to(device)
+        .eval()
+    )
     noise_scheduler = DDPMScheduler.from_pretrained(str(checkpoint_path / "scheduler"))
 
     unet_path = checkpoint_path / "unet_lora"
@@ -53,13 +70,13 @@ def load_finetuned_models(checkpoint_dir, device):
         base_unet = UNet2DConditionModel.from_pretrained(
             "runwayml/stable-diffusion-v1-5",
             subfolder="unet",
-            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
         )
         unet = PeftModel.from_pretrained(base_unet, str(unet_path))
     else:
         unet = UNet2DConditionModel.from_pretrained(
             str(checkpoint_path / "unet"),
-            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
         )
     unet = unet.to(device).eval()
 
@@ -73,7 +90,9 @@ def load_finetuned_models(checkpoint_dir, device):
     }
 
 
-def generate_unconditional_images(models, num_images=9, num_inference_steps=100, seed=None):
+def generate_unconditional_images(
+    models, num_images=9, num_inference_steps=100, seed=None
+):
     unet = models["unet"]
     noise_scheduler = models["noise_scheduler"]
     device = models["device"]
@@ -87,10 +106,18 @@ def generate_unconditional_images(models, num_images=9, num_inference_steps=100,
 
     images = []
     for i in range(num_images):
-        noise = torch.randn((1, unet.config.in_channels, image_size, image_size), device=device, dtype=dtype)
+        noise = torch.randn(
+            (1, unet.config.in_channels, image_size, image_size),
+            device=device,
+            dtype=dtype,
+        )
         latents = noise
 
-        for t in tqdm(noise_scheduler.timesteps, desc=f"Denoising [{i+1}/{num_images}]", leave=False):
+        for t in tqdm(
+            noise_scheduler.timesteps,
+            desc=f"Denoising [{i + 1}/{num_images}]",
+            leave=False,
+        ):
             with torch.no_grad():
                 noise_pred = unet(latents, t).sample
             latents = noise_scheduler.step(noise_pred, t, latents).prev_sample
@@ -105,7 +132,9 @@ def generate_unconditional_images(models, num_images=9, num_inference_steps=100,
 
 def compute_fid(real_images, fake_images, device):
     if len(real_images) < 2 or len(fake_images) < 2:
-        print(f"  ⚠ FID skipped: need ≥2 samples per distribution (real={len(real_images)}, fake={len(fake_images)})")
+        print(
+            f"  ⚠ FID skipped: need ≥2 samples per distribution (real={len(real_images)}, fake={len(fake_images)})"
+        )
         return 0.0
     fid = FrechetInceptionDistance(feature=64).to(device)
     for img in real_images:
@@ -120,12 +149,14 @@ def compute_fid(real_images, fake_images, device):
 def compute_clip_score(images, prompts, device):
     from transformers import CLIPModel, CLIPProcessor
 
-    model = CLIPModel.from_pretrained("zer0int/LongCLIP-L-Diffusers").to(device)
-    processor = CLIPProcessor.from_pretrained("zer0int/LongCLIP-L-Diffusers")
+    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16").to(device)
+    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
 
     scores = []
     for img, prompt in zip(images, prompts):
-        inputs = processor(text=[prompt], images=img, return_tensors="pt", padding=True).to(device)
+        inputs = processor(
+            text=[prompt], images=img, return_tensors="pt", padding=True
+        ).to(device)
         with torch.no_grad():
             outputs = model(**inputs)
             logits_per_image = outputs.logits_per_image
@@ -175,8 +206,6 @@ def evaluate_checkpoints(
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    
-
     train_dataset, test_dataset = create_train_test_splits(
         image_dir, descriptions_file, image_size=256, train_ratio=0.5, seed=42
     )
@@ -194,9 +223,9 @@ def evaluate_checkpoints(
         ckpt_path = ckpt["path"]
         rank = ckpt["rank"]
         label = "uncond" if rank == "uncond" else f"LoRA rank={rank}"
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"Evaluating {label} ({ckpt_path})")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         models = load_finetuned_models(ckpt_path, device)
 
@@ -210,8 +239,10 @@ def evaluate_checkpoints(
         if is_uncond:
             num_uncond = len(prompts) * num_generated_per_prompt
             uncond_imgs = generate_unconditional_images(
-                models, num_images=num_uncond,
-                num_inference_steps=num_inference_steps, seed=42,
+                models,
+                num_images=num_uncond,
+                num_inference_steps=num_inference_steps,
+                seed=42,
             )
             for pil_img in uncond_imgs:
                 all_gen_pil.append(pil_img)
@@ -223,7 +254,8 @@ def evaluate_checkpoints(
                     seed = i * num_generated_per_prompt + j + 42
                     all_seeds.append(seed)
                     imgs = generate_images(
-                        [prompt], models,
+                        [prompt],
+                        models,
                         num_inference_steps=num_inference_steps,
                         guidance_scale=guidance_scale,
                         seed=seed,
@@ -241,7 +273,9 @@ def evaluate_checkpoints(
         if is_uncond:
             clip_mean, clip_per_image = 0.0, []
         else:
-            clip_mean, clip_per_image = compute_clip_score(all_gen_pil, used_prompts, device)
+            clip_mean, clip_per_image = compute_clip_score(
+                all_gen_pil, used_prompts, device
+            )
         print(f"CLIP Score (mean): {clip_mean:.4f}")
 
         rank_num = 0 if is_uncond else int(rank)
@@ -264,9 +298,9 @@ def evaluate_checkpoints(
         json.dump(results, f, indent=2)
     print(f"\nResults saved to {output_file}")
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"{'Model':<20} {'FID':<12} {'CLIP Score':<12}")
     print("-" * 44)
     for key, val in results.items():
@@ -276,16 +310,30 @@ def evaluate_checkpoints(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluate finetuned models with FID and CLIP score")
-    parser.add_argument("--image-dir", type=str, default="data/artifacts_with_descriptions")
-    parser.add_argument("--descriptions-file", type=str, default="data/all_artifacts.json")
-    parser.add_argument("--num-generated-per-prompt", type=int, default=2,
-                        help="How many images to generate per prompt for metrics")
+    parser = argparse.ArgumentParser(
+        description="Evaluate finetuned models with FID and CLIP score"
+    )
+    parser.add_argument(
+        "--image-dir", type=str, default="data/artifacts_with_descriptions"
+    )
+    parser.add_argument(
+        "--descriptions-file", type=str, default="data/all_artifacts.json"
+    )
+    parser.add_argument(
+        "--num-generated-per-prompt",
+        type=int,
+        default=2,
+        help="How many images to generate per prompt for metrics",
+    )
     parser.add_argument("--num-inference-steps", type=int, default=100)
     parser.add_argument("--guidance-scale", type=float, default=7.5)
     parser.add_argument("--output-file", type=str, default="evaluation_results.json")
-    parser.add_argument("--folder", type=str, default=None,
-                        help="Evaluate a single folder (e.g. vanilla_finetuned_lora_256/final or vanilla_finetuned_uncond/final)")
+    parser.add_argument(
+        "--folder",
+        type=str,
+        default=None,
+        help="Evaluate a single folder (e.g. vanilla_finetuned_lora_256/final or vanilla_finetuned_uncond/final)",
+    )
     args = parser.parse_args()
 
     if args.folder:
@@ -299,7 +347,9 @@ if __name__ == "__main__":
     else:
         checkpoints = find_lora_checkpoints()
         if not checkpoints:
-            print("No finetuned checkpoints found matching 'vanilla_finetuned_lora_*/final' or 'vanilla_finetuned_uncond/final'")
+            print(
+                "No finetuned checkpoints found matching 'vanilla_finetuned_lora_*/final' or 'vanilla_finetuned_uncond/final'"
+            )
             exit(1)
 
     print(f"Found {len(checkpoints)} checkpoint(s):")
