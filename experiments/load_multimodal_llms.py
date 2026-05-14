@@ -28,9 +28,8 @@ def load_qwen25_vl(device, dtype):
     model_id = "Qwen/Qwen2.5-VL-7B-Instruct"
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_id,
-        torch_dtype=dtype,
-        device_map=device,
-        attn_implementation="eager",
+        torch_dtype="auto",
+        device_map="auto",
     )
     processor = AutoProcessor.from_pretrained(model_id)
     return model, processor, model_id
@@ -52,6 +51,8 @@ def infer_qwen25_vl(model, processor, image, prompt, device):
     inputs = processor(
         text=[text], images=[image], padding=True, return_tensors="pt"
     ).to(device)
+    if "pixel_values" in inputs:
+        inputs["pixel_values"] = inputs["pixel_values"].to(model.dtype)
     output = model.generate(**inputs, max_new_tokens=128)
     return processor.decode(
         output[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
