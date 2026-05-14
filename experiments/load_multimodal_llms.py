@@ -10,7 +10,9 @@ def load_llava(device, dtype):
 
     model_id = "llava-hf/llava-1.5-7b-hf"
     model = LlavaForConditionalGeneration.from_pretrained(
-        model_id, torch_dtype=dtype, device_map=device
+        model_id,
+        torch_dtype="auto",
+        device_map="auto",
     )
     processor = AutoProcessor.from_pretrained(model_id)
     return model, processor, model_id
@@ -60,19 +62,33 @@ def infer_qwen25_vl(model, processor, image, prompt, device):
 
 
 def load_glm4v(device, dtype):
+    import torch.nn as nn
     from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
+
+    # Patch nn.Module so custom GLM code works with newer transformers
+    orig_getattr = nn.Module.__getattr__
+
+    def _patched_getattr(self, name):
+        if name == "all_tied_weights_keys":
+            return getattr(self, "_tied_weights_keys", {})
+        return orig_getattr(self, name)
+
+    nn.Module.__getattr__ = _patched_getattr
 
     model_id = "THUDM/glm-4v-9b"
     config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
     if not hasattr(config, "max_length") and hasattr(config, "seq_length"):
         config.max_length = config.seq_length
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        config=config,
-        torch_dtype=dtype,
-        device_map=device,
-        trust_remote_code=True,
-    )
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            config=config,
+            torch_dtype=dtype,
+            device_map=device,
+            trust_remote_code=True,
+        )
+    finally:
+        nn.Module.__getattr__ = orig_getattr
     tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
     return model, tokenizer, model_id
 
@@ -147,7 +163,7 @@ def infer_gemma3(model, processor, image, prompt, device):
 
 
 LOADERS = {
-    # "LLaVA-1.5-7B": load_llava,
+    "LLaVA-1.5-7B": load_llava,
     "Qwen2.5-VL-7B": load_qwen25_vl,
     "GLM-4V-9B": load_glm4v,
     "Gemma-3-4B-IT": load_gemma3,
@@ -155,7 +171,7 @@ LOADERS = {
 }
 
 INFER = {
-    # "LLaVA-1.5-7B": infer_llava,
+    "LLaVA-1.5-7B": infer_llava,
     "Qwen2.5-VL-7B": infer_qwen25_vl,
     "GLM-4V-9B": infer_glm4v,
     "Gemma-3-4B-IT": infer_gemma3,
