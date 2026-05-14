@@ -111,6 +111,8 @@ def infer_gemma3(model, processor, image, prompt, device):
         messages, tokenize=False, add_generation_prompt=True
     )
     inputs = processor(text=text, images=image, return_tensors="pt").to(device)
+    if "pixel_values" in inputs:
+        inputs["pixel_values"] = inputs["pixel_values"].to(model.dtype)
     output = model.generate(**inputs, max_new_tokens=128)
     return processor.decode(
         output[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
