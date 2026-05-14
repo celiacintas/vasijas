@@ -22,7 +22,9 @@ def infer_llava(model, processor, image, prompt, device):
     text = f"<image>\n{prompt}"
     inputs = processor(images=image, text=text, return_tensors="pt").to(device)
     output = model.generate(**inputs, max_new_tokens=128)
-    return processor.decode(output[0], skip_special_tokens=True)
+    return processor.decode(
+        output[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
+    )
 
 
 def load_qwen25_vl(device, dtype):
