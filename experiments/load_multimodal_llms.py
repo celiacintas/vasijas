@@ -194,7 +194,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
     sample_images = get_sample_images()
-    prompt = "Describe this image in one sentence."
+    prompt = "In this image you can see an archeological ceramic artifact, can you tell me to which culture belongs?"
 
     for name, loader in LOADERS.items():
         print(f"\n{'=' * 70}")
