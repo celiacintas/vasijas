@@ -19,7 +19,8 @@ def load_llava(device, dtype):
 
 
 def infer_llava(model, processor, image, prompt, device):
-    inputs = processor(images=image, text=prompt, return_tensors="pt").to(device)
+    text = f"<image>\n{prompt}"
+    inputs = processor(images=image, text=text, return_tensors="pt").to(device)
     output = model.generate(**inputs, max_new_tokens=128)
     return processor.decode(output[0], skip_special_tokens=True)
 
