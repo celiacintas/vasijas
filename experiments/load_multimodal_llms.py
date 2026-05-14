@@ -98,18 +98,9 @@ def load_glm4v(device, dtype):
 
 
 def infer_glm4v(model, tokenizer, image, prompt, device):
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {"type": "image", "image": image},
-                {"type": "text", "text": prompt},
-            ],
-        }
-    ]
-    inputs = tokenizer.apply_chat_template(
-        messages, add_generation_prompt=True, tokenize=True, return_tensors="pt"
-    ).to(device)
+    inputs = model.build_chat_input(tokenizer, prompt, history=[], image=image).to(
+        device
+    )
     output = model.generate(**inputs, max_new_tokens=128)
     return tokenizer.decode(output[0], skip_special_tokens=True)
 
