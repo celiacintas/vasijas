@@ -51,8 +51,8 @@ def save_denoising_sequence(
     if prompts is None:
         prompts = [
             "a ceramic plate with iberian geometric, linear-based decoration with alternating cream and red fields; hatching and stippling create depth and visual interest across fragmented vessel.",
-            #    "a ceramic plate with a central solid red circle and a concentric design featuring an outer ring of alternating red and white rectangular segments arranged radially geometric, highly symmetrical composition with regular spacing red and white",
-            #    "a ceramic vessel with graduated complexity from base to rim, with decoration increasing in density toward the top. The combination of simple lines and crosshatched triangles creates a dynamic visual hierarchy. The vessel demonstrates controlled, red geometric patterning typical of iberian ceramic design."
+            "a ceramic plate with a central solid red circle and a concentric design featuring an outer ring of alternating red and white rectangular segments arranged radially geometric, highly symmetrical composition with regular spacing red and white",
+            "a ceramic vessel with graduated complexity from base to rim, with decoration increasing in density toward the top. The combination of simple lines and crosshatched triangles creates a dynamic visual hierarchy. The vessel demonstrates controlled, red geometric patterning typical of iberian ceramic design.",
         ]
 
     save_steps = [0, 10, 20, 30, 40, 45, 49]
