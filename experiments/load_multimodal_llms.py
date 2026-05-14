@@ -99,7 +99,9 @@ def load_gemma3(device, dtype):
 
     model_id = "google/gemma-3-4b-it"
     model = AutoModelForCausalLM.from_pretrained(
-        model_id, torch_dtype=dtype, device_map=device
+        model_id,
+        torch_dtype="auto",
+        device_map="auto",
     )
     processor = AutoProcessor.from_pretrained(model_id)
     return model, processor, model_id
@@ -148,7 +150,7 @@ LOADERS = {
     # "LLaVA-1.5-7B": load_llava,
     "Qwen2.5-VL-7B": load_qwen25_vl,
     "GLM-4V-9B": load_glm4v,
-    # "Gemma-3-4B-IT": load_gemma3,
+    "Gemma-3-4B-IT": load_gemma3,
     # "Moondream2": load_moondream2,
 }
 
@@ -156,7 +158,7 @@ INFER = {
     # "LLaVA-1.5-7B": infer_llava,
     "Qwen2.5-VL-7B": infer_qwen25_vl,
     "GLM-4V-9B": infer_glm4v,
-    # "Gemma-3-4B-IT": infer_gemma3,
+    "Gemma-3-4B-IT": infer_gemma3,
     # "Moondream2": infer_moondream2,
 }
 
