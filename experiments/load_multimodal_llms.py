@@ -78,47 +78,37 @@ def infer_qwen25_vl(model, processor, image, prompt, device):
 
 
 def load_glm4v(device, dtype):
-    import torch.nn as nn
-    from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
-
-    # Patch nn.Module so custom GLM code works with newer transformers
-    orig_getattr = nn.Module.__getattr__
-
-    def _patched_getattr(self, name):
-        if name == "all_tied_weights_keys":
-            keys = getattr(self, "_tied_weights_keys", {})
-            return {} if keys is None else keys
-        return orig_getattr(self, name)
-
-    nn.Module.__getattr__ = _patched_getattr
+    from transformers import AutoModelForCausalLM, AutoProcessor
 
     model_id = "THUDM/glm-4v-9b"
-    config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
-    if not hasattr(config, "max_length") and hasattr(config, "seq_length"):
-        config.max_length = config.seq_length
-    try:
-        model = AutoModelForCausalLM.from_pretrained(
-            model_id,
-            config=config,
-            dtype="auto",
-            device_map="auto",
-            trust_remote_code=True,
-        )
-    finally:
-        nn.Module.__getattr__ = orig_getattr
-    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-    return model, tokenizer, model_id
-
-
-def infer_glm4v(model, tokenizer, image, prompt, device):
-    response, _ = model.chat(
-        tokenizer,
-        query=prompt,
-        image=image,
-        history=[],
-        max_new_tokens=128,
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id,
+        dtype=dtype,
+        device_map=device,
+        trust_remote_code=True,
     )
-    return response
+    processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+    return model, processor, model_id
+
+
+def infer_glm4v(model, processor, image, prompt, device):
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "image", "image": image},
+                {"type": "text", "text": prompt},
+            ],
+        }
+    ]
+    text = processor.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    inputs = processor(text=text, images=image, return_tensors="pt").to(device)
+    output = model.generate(**inputs, max_new_tokens=128)
+    return processor.decode(
+        output[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
+    )
 
 
 def load_gemma3(device, dtype):
