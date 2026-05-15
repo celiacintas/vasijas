@@ -100,8 +100,8 @@ def load_glm4v(device, dtype):
         model = AutoModelForCausalLM.from_pretrained(
             model_id,
             config=config,
-            torch_dtype=dtype,
-            device_map=device,
+            dtype="auto",
+            device_map="auto",
             trust_remote_code=True,
         )
     finally:
@@ -111,11 +111,14 @@ def load_glm4v(device, dtype):
 
 
 def infer_glm4v(model, tokenizer, image, prompt, device):
-    inputs = model.build_chat_input(tokenizer, prompt, history=[], image=image).to(
-        device
+    response, _ = model.chat(
+        tokenizer,
+        query=prompt,
+        image=image,
+        history=[],
+        max_new_tokens=128,
     )
-    output = model.generate(**inputs, max_new_tokens=128)
-    return tokenizer.decode(output[0], skip_special_tokens=True)
+    return response
 
 
 def load_gemma3(device, dtype):
