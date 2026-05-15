@@ -1,6 +1,9 @@
 """Load and test multimodal LLMs from Hugging Face"""
 
+import csv
 import random
+from pathlib import Path
+
 import torch
 from PIL import Image
 
@@ -230,6 +233,7 @@ if __name__ == "__main__":
     sample_images = get_cultural_samples(n=10)
     prompt = "Tell me in two words to which culture belongs this archeological ceramic artifact. No long sentences accepted."
 
+    rows = []
     for name, loader in LOADERS.items():
         print(f"\n{'=' * 70}")
         print(f"  {name}")
@@ -250,6 +254,7 @@ if __name__ == "__main__":
                     if prompt in response
                     else response
                 )
+                rows.append([name, clean.lower(), s["culture"]])
                 print(f"  [{s['filename']}] (ground truth: {s['culture']})")
                 print(f"  {clean}")
                 print()
@@ -261,3 +266,10 @@ if __name__ == "__main__":
             import traceback
 
             traceback.print_exc()
+
+    output_path = Path("evaluation_results.csv")
+    with open(output_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["model", "response", "groundtruth"])
+        writer.writerows(rows)
+    print(f"\nWrote {len(rows)} rows to {output_path}")
