@@ -246,8 +246,10 @@ if __name__ == "__main__":
             for s in sample_images:
                 response = infer_fn(model, proc_tok, s["pil_image"], prompt, device)
                 clean = (
-                    response.split(prompt)[-1] if prompt in response else response
-                ).strip().split(".")[0] + "."
+                    response.split(prompt)[-1].strip()
+                    if prompt in response
+                    else response
+                )
                 print(f"  [{s['filename']}] (ground truth: {s['culture']})")
                 print(f"  {clean}")
                 print()
