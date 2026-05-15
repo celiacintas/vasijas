@@ -78,23 +78,37 @@ def infer_qwen25_vl(model, processor, image, prompt, device):
 
 
 def load_glm4v(device, dtype):
+    import torch.nn as nn
     from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
+
+    orig_getattr = nn.Module.__getattr__
+
+    def _patched_getattr(self, name):
+        if name == "all_tied_weights_keys":
+            keys = getattr(self, "_tied_weights_keys", {})
+            return {} if keys is None else keys
+        return orig_getattr(self, name)
+
+    nn.Module.__getattr__ = _patched_getattr
 
     model_id = "THUDM/glm-4v-9b"
     config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
     if not hasattr(config, "max_length") and hasattr(config, "seq_length"):
         config.max_length = config.seq_length
-    model = (
-        AutoModelForCausalLM.from_pretrained(
-            model_id,
-            config=config,
-            torch_dtype=torch.bfloat16,
-            low_cpu_mem_usage=True,
-            trust_remote_code=True,
+    try:
+        model = (
+            AutoModelForCausalLM.from_pretrained(
+                model_id,
+                config=config,
+                torch_dtype=torch.bfloat16,
+                low_cpu_mem_usage=True,
+                trust_remote_code=True,
+            )
+            .to(device)
+            .eval()
         )
-        .to(device)
-        .eval()
-    )
+    finally:
+        nn.Module.__getattr__ = orig_getattr
     tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
     return model, tokenizer, model_id
 
