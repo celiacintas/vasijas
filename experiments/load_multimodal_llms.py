@@ -21,7 +21,18 @@ def load_llava(device, dtype):
 
 
 def infer_llava(model, processor, image, prompt, device):
-    text = f"<image>\n{prompt}"
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "image", "image": image},
+                {"type": "text", "text": prompt},
+            ],
+        }
+    ]
+    text = processor.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
     inputs = processor(images=image, text=text, return_tensors="pt").to(device)
     output = model.generate(**inputs, max_new_tokens=128)
     return processor.decode(
