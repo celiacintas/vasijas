@@ -78,41 +78,40 @@ def infer_qwen25_vl(model, processor, image, prompt, device):
 
 
 def load_glm4v(device, dtype):
-    from transformers import AutoModelForCausalLM, AutoProcessor, AutoConfig
+    from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 
     model_id = "THUDM/glm-4v-9b"
     config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
     if not hasattr(config, "max_length") and hasattr(config, "seq_length"):
         config.max_length = config.seq_length
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        config=config,
-        dtype=dtype,
-        device_map=device,
-        trust_remote_code=True,
+    model = (
+        AutoModelForCausalLM.from_pretrained(
+            model_id,
+            config=config,
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+        )
+        .to(device)
+        .eval()
     )
-    processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
-    return model, processor, model_id
+    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+    return model, tokenizer, model_id
 
 
-def infer_glm4v(model, processor, image, prompt, device):
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {"type": "image", "image": image},
-                {"type": "text", "text": prompt},
-            ],
-        }
-    ]
-    text = processor.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True
-    )
-    inputs = processor(text=text, images=image, return_tensors="pt").to(device)
-    output = model.generate(**inputs, max_new_tokens=128)
-    return processor.decode(
-        output[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
-    )
+def infer_glm4v(model, tokenizer, image, prompt, device):
+    inputs = tokenizer.apply_chat_template(
+        [{"role": "user", "image": image, "content": prompt}],
+        add_generation_prompt=True,
+        tokenize=True,
+        return_tensors="pt",
+        return_dict=True,
+    ).to(device)
+    gen_kwargs = {"max_length": 200, "do_sample": True, "top_k": 1}
+    with torch.no_grad():
+        outputs = model.generate(**inputs, **gen_kwargs)
+        outputs = outputs[:, inputs["input_ids"].shape[1] :]
+        return tokenizer.decode(outputs[0])
 
 
 def load_gemma3(device, dtype):
