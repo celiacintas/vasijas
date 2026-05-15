@@ -78,11 +78,15 @@ def infer_qwen25_vl(model, processor, image, prompt, device):
 
 
 def load_glm4v(device, dtype):
-    from transformers import AutoModelForCausalLM, AutoProcessor
+    from transformers import AutoModelForCausalLM, AutoProcessor, AutoConfig
 
     model_id = "THUDM/glm-4v-9b"
+    config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+    if not hasattr(config, "max_length") and hasattr(config, "seq_length"):
+        config.max_length = config.seq_length
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
+        config=config,
         dtype=dtype,
         device_map=device,
         trust_remote_code=True,
