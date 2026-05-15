@@ -190,7 +190,7 @@ def infer_gemma3(model, processor, image, prompt, device):
 LOADERS = {
     "LLaVA-1.5-7B": load_llava,
     "Qwen2.5-VL-7B": load_qwen25_vl,
-    "GLM-4V-9B": load_glm4v,
+    # "GLM-4V-9B": load_glm4v,
     "Gemma-3-4B-IT": load_gemma3,
     # "Moondream2": load_moondream2,
 }
@@ -198,7 +198,7 @@ LOADERS = {
 INFER = {
     "LLaVA-1.5-7B": infer_llava,
     "Qwen2.5-VL-7B": infer_qwen25_vl,
-    "GLM-4V-9B": infer_glm4v,
+    # "GLM-4V-9B": infer_glm4v,
     "Gemma-3-4B-IT": infer_gemma3,
     # "Moondream2": infer_moondream2,
 }
@@ -246,10 +246,8 @@ if __name__ == "__main__":
             for s in sample_images:
                 response = infer_fn(model, proc_tok, s["pil_image"], prompt, device)
                 clean = (
-                    response.split(prompt)[-1].strip()
-                    if prompt in response
-                    else response
-                )
+                    response.split(prompt)[-1] if prompt in response else response
+                ).strip().split(".")[0] + "."
                 print(f"  [{s['filename']}] (ground truth: {s['culture']})")
                 print(f"  {clean}")
                 print()
