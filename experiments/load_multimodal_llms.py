@@ -110,6 +110,13 @@ def load_glm4v(device, dtype):
     finally:
         nn.Module.__getattr__ = orig_getattr
     tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+    if not hasattr(tokenizer, "batch_encode_plus"):
+        import functools
+        from transformers.tokenization_utils import PreTrainedTokenizer
+
+        tokenizer.batch_encode_plus = functools.partial(
+            PreTrainedTokenizer.batch_encode_plus, tokenizer
+        )
     return model, tokenizer, model_id
 
 
