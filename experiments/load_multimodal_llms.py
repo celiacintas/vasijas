@@ -1,8 +1,14 @@
 """Load and test multimodal LLMs from Hugging Face"""
 
+import csv
+import json
+import random
+
 import torch
 from pathlib import Path
 from PIL import Image
+
+from ceramic_dataset import CeramicArtifactDataset
 
 
 def load_llava(device, dtype):
@@ -174,6 +180,45 @@ INFER = {
 }
 
 
+def prepare_descriptions_jsonl(csv_path, jsonl_path):
+    descriptions = {}
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            if row["has_description"] == "yes" and row["description"].strip():
+                descriptions[row["filename"]] = row["description"].strip()
+    with open(jsonl_path, "w", encoding="utf-8") as f:
+        for fn, desc in sorted(descriptions.items()):
+            f.write(json.dumps({"filename": fn, "description": desc}) + "\n")
+    print(f"Wrote {len(descriptions)} descriptions to {jsonl_path}")
+
+
+def get_cultural_samples(n=100, seed=42):
+    csv_path = Path("data/all_artifacts_comprehensive.csv")
+    jsonl_path = Path("data/descriptions.jsonl")
+    if not jsonl_path.exists():
+        prepare_descriptions_jsonl(csv_path, jsonl_path)
+    dataset = CeramicArtifactDataset(
+        image_dir="data", descriptions_file=str(jsonl_path)
+    )
+    by_culture = {}
+    for i in range(len(dataset)):
+        sample = dataset[i]
+        cul = sample["culture"]
+        by_culture.setdefault(cul, []).append({**sample, "idx": i})
+    rng = random.Random(seed)
+    per_culture = n // 2
+    sampled = []
+    for cul in ("iberian", "egyptian"):
+        pool = by_culture.get(cul, [])
+        k = min(per_culture, len(pool))
+        for entry in rng.sample(pool, k):
+            img = Image.open(dataset.image_paths[entry["idx"]]).convert("RGB")
+            sampled.append({**entry, "pil_image": img, "culture": cul})
+        print(f"  {cul}: {k} samples (from {len(pool)} available)")
+    rng.shuffle(sampled)
+    return sampled
+
+
 def get_sample_images():
     image_dir = Path("data/artifacts_with_descriptions")
     paths = sorted(image_dir.glob("*.png"))[:3]
@@ -187,8 +232,8 @@ def get_sample_images():
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
-    sample_images = get_sample_images()
-    prompt = "In this image you can see an archeological ceramic artifact, can you tell me to which culture belongs to in one sentence?"
+    sample_images = get_cultural_samples(n=3)
+    prompt = "In this image you can see an archeological ceramic artifact, can you tell me to which culture belongs to in two words?"
 
     for name, loader in LOADERS.items():
         print(f"\n{'=' * 70}")
@@ -199,18 +244,18 @@ if __name__ == "__main__":
             model = result[0]
             proc_tok = result[1]
             print(f"  Parameters: {model.num_parameters() / 1e9:.2f}B")
-            print(f"  Images: {[img_name for img_name, _ in sample_images]}")
+            print(f"  Images: {[s['filename'] for s in sample_images]}")
             print(f"  Prompt: {prompt}")
             print()
             infer_fn = INFER[name]
-            for img_name, img in sample_images:
-                response = infer_fn(model, proc_tok, img, prompt, device)
+            for s in sample_images:
+                response = infer_fn(model, proc_tok, s["pil_image"], prompt, device)
                 clean = (
                     response.split(prompt)[-1].strip()
                     if prompt in response
                     else response
                 )
-                print(f"  [{img_name}]")
+                print(f"  [{s['filename']}] (ground truth: {s['culture']})")
                 print(f"  {clean}")
                 print()
             del model

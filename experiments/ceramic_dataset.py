@@ -25,8 +25,19 @@ class CeramicArtifactDataset(Dataset):
                         except json.JSONDecodeError:
                             continue
 
-        all_images = sorted(self.image_dir.glob("*.png"))
-        self.image_paths = [p for p in all_images if p.name in self.descriptions]
+        self.culture_map = {"iberian": "iberian", "predynastic-egyptian": "egyptian"}
+
+        all_images = sorted(
+            list(self.image_dir.glob("**/*.png"))
+            + list(self.image_dir.glob("**/*.jpg"))
+        )
+        self.image_paths = []
+        self.image_cultures = []
+        for p in all_images:
+            if p.name in self.descriptions:
+                self.image_paths.append(p)
+                parent = p.relative_to(self.image_dir).parent
+                self.image_cultures.append(self.culture_map.get(parent.name, ""))
         print(
             f"Loaded {len(self.image_paths)} images with descriptions (filtered {len(all_images) - len(self.image_paths)} without)"
         )
@@ -56,6 +67,7 @@ class CeramicArtifactDataset(Dataset):
                 "image": image_array,
                 "text": description,
                 "filename": image_path.name,
+                "culture": self.image_cultures[idx],
             }
         except Exception as e:
             print(f"Error loading {image_path}: {e}")
@@ -63,6 +75,7 @@ class CeramicArtifactDataset(Dataset):
                 "image": torch.randn(3, self.image_size, self.image_size),
                 "text": "",
                 "filename": image_path.name,
+                "culture": self.image_cultures[idx],
             }
 
 
