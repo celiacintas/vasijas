@@ -8,12 +8,12 @@ import json
 class CeramicArtifactDataset(Dataset):
     """Dataset for ceramic artifacts with descriptions"""
 
-    def __init__(self, image_dir, descriptions_file, image_size=512):
+    def __init__(self, image_dir, descriptions_file=None, image_size=512):
         self.image_dir = Path(image_dir)
         self.image_size = image_size
         self.descriptions = {}
 
-        if Path(descriptions_file).exists():
+        if descriptions_file and Path(descriptions_file).exists():
             with open(descriptions_file, "r", encoding="utf-8") as f:
                 for line in f:
                     if line.strip():
@@ -34,13 +34,17 @@ class CeramicArtifactDataset(Dataset):
         self.image_paths = []
         self.image_cultures = []
         for p in all_images:
-            if p.name in self.descriptions:
+            if not descriptions_file or p.name in self.descriptions:
                 self.image_paths.append(p)
                 parent = p.relative_to(self.image_dir).parent
                 self.image_cultures.append(self.culture_map.get(parent.name, ""))
-        print(
-            f"Loaded {len(self.image_paths)} images with descriptions (filtered {len(all_images) - len(self.image_paths)} without)"
-        )
+        if descriptions_file:
+            print(
+                f"Loaded {len(self.image_paths)} images with descriptions "
+                f"(filtered {len(all_images) - len(self.image_paths)} without)"
+            )
+        else:
+            print(f"Loaded {len(self.image_paths)} images (no descriptions filter)")
 
     def __len__(self):
         return len(self.image_paths)
@@ -61,7 +65,7 @@ class CeramicArtifactDataset(Dataset):
             )
             image_array = image_array / 127.5 - 1
 
-            description = self.descriptions[image_path.name]
+            description = self.descriptions.get(image_path.name, "")
 
             return {
                 "image": image_array,

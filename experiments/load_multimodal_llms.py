@@ -1,11 +1,7 @@
 """Load and test multimodal LLMs from Hugging Face"""
 
-import csv
-import json
 import random
-
 import torch
-from pathlib import Path
 from PIL import Image
 
 from ceramic_dataset import CeramicArtifactDataset
@@ -180,31 +176,12 @@ INFER = {
 }
 
 
-def prepare_descriptions_jsonl(csv_path, jsonl_path):
-    descriptions = {}
-    with open(csv_path, newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            if row["has_description"] == "yes" and row["description"].strip():
-                descriptions[row["filename"]] = row["description"].strip()
-    with open(jsonl_path, "w", encoding="utf-8") as f:
-        for fn, desc in sorted(descriptions.items()):
-            f.write(json.dumps({"filename": fn, "description": desc}) + "\n")
-    print(f"Wrote {len(descriptions)} descriptions to {jsonl_path}")
-
-
 def get_cultural_samples(n=100, seed=42):
-    csv_path = Path("data/all_artifacts_comprehensive.csv")
-    jsonl_path = Path("data/descriptions.jsonl")
-    if not jsonl_path.exists():
-        prepare_descriptions_jsonl(csv_path, jsonl_path)
-    dataset = CeramicArtifactDataset(
-        image_dir="data", descriptions_file=str(jsonl_path)
-    )
+    dataset = CeramicArtifactDataset(image_dir="data")
     by_culture = {}
     for i in range(len(dataset)):
         sample = dataset[i]
-        cul = sample["culture"]
-        by_culture.setdefault(cul, []).append({**sample, "idx": i})
+        by_culture.setdefault(sample["culture"], []).append({**sample, "idx": i})
     rng = random.Random(seed)
     per_culture = n // 2
     sampled = []
@@ -213,20 +190,10 @@ def get_cultural_samples(n=100, seed=42):
         k = min(per_culture, len(pool))
         for entry in rng.sample(pool, k):
             img = Image.open(dataset.image_paths[entry["idx"]]).convert("RGB")
-            sampled.append({**entry, "pil_image": img, "culture": cul})
+            sampled.append({**entry, "pil_image": img})
         print(f"  {cul}: {k} samples (from {len(pool)} available)")
     rng.shuffle(sampled)
     return sampled
-
-
-def get_sample_images():
-    image_dir = Path("data/artifacts_with_descriptions")
-    paths = sorted(image_dir.glob("*.png"))[:3]
-    images = []
-    for p in paths:
-        img = Image.open(p).convert("RGB")
-        images.append((p.name, img))
-    return images
 
 
 if __name__ == "__main__":
