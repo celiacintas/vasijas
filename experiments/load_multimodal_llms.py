@@ -34,7 +34,7 @@ def infer_llava(model, processor, image, prompt, device):
         messages, tokenize=False, add_generation_prompt=True
     )
     inputs = processor(images=image, text=text, return_tensors="pt").to(device)
-    output = model.generate(**inputs, max_new_tokens=10)
+    output = model.generate(**inputs, max_new_tokens=128)
     return processor.decode(
         output[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
     )
@@ -71,7 +71,7 @@ def infer_qwen25_vl(model, processor, image, prompt, device):
     ).to(device)
     if "pixel_values" in inputs:
         inputs["pixel_values"] = inputs["pixel_values"].to(model.dtype)
-    output = model.generate(**inputs, max_new_tokens=10)
+    output = model.generate(**inputs, max_new_tokens=128)
     return processor.decode(
         output[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
     )
@@ -164,7 +164,7 @@ def infer_gemma3(model, processor, image, prompt, device):
     inputs = processor(text=text, images=image, return_tensors="pt").to(device)
     if "pixel_values" in inputs:
         inputs["pixel_values"] = inputs["pixel_values"].to(model.dtype)
-    output = model.generate(**inputs, max_new_tokens=10)
+    output = model.generate(**inputs, max_new_tokens=128)
     return processor.decode(
         output[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
     )
@@ -228,7 +228,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
     sample_images = get_cultural_samples(n=3)
-    prompt = "In this image you can see an archeological ceramic artifact, can you tell me to which culture belongs to in two words?"
+    prompt = "Tell me in two words to which culture belongs this archeological ceramic artifact. No long sentences accepted."
 
     for name, loader in LOADERS.items():
         print(f"\n{'=' * 70}")
