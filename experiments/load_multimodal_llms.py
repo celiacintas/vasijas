@@ -227,7 +227,7 @@ def get_cultural_samples(n=100, seed=42):
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
-    sample_images = get_cultural_samples(n=3)
+    sample_images = get_cultural_samples(n=10)
     prompt = "Tell me in two words to which culture belongs this archeological ceramic artifact. No long sentences accepted."
 
     for name, loader in LOADERS.items():
