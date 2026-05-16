@@ -171,21 +171,25 @@ def infer_gemma3(model, processor, image, prompt, device):
     )
 
 
-# def load_moondream2(device, dtype):
-#     from transformers import AutoModelForCausalLM, AutoTokenizer
-#
-#     model_id = "vikhyatk/moondream2"
-#     revision = "2025-06-21"
-#     model = AutoModelForCausalLM.from_pretrained(
-#         model_id, revision=revision, torch_dtype=dtype, device_map=device, trust_remote_code=True
-#     )
-#     tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
-#     return model, tokenizer, model_id
-#
-#
-# def infer_moondream2(model, tokenizer, image, prompt, device):
-#     image_embeds = model.encode_image(image)
-#     return model.answer_question(image_embeds, prompt, tokenizer)
+def load_moondream2(device, dtype):
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    model_id = "vikhyatk/moondream2"
+    revision = "2025-06-21"
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id,
+        revision=revision,
+        torch_dtype=dtype,
+        device_map=device,
+        trust_remote_code=True,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
+    return model, tokenizer, model_id
+
+
+def infer_moondream2(model, tokenizer, image, prompt, device):
+    image_embeds = model.encode_image(image)
+    return model.answer_question(image_embeds, prompt, tokenizer)
 
 
 LOADERS = {
@@ -193,7 +197,7 @@ LOADERS = {
     "Qwen2.5-VL-7B": load_qwen25_vl,
     # "GLM-4V-9B": load_glm4v,
     "Gemma-3-4B-IT": load_gemma3,
-    # "Moondream2": load_moondream2,
+    "Moondream2": load_moondream2,
 }
 
 INFER = {
@@ -201,7 +205,7 @@ INFER = {
     "Qwen2.5-VL-7B": infer_qwen25_vl,
     # "GLM-4V-9B": infer_glm4v,
     "Gemma-3-4B-IT": infer_gemma3,
-    # "Moondream2": infer_moondream2,
+    "Moondream2": infer_moondream2,
 }
 
 
@@ -253,7 +257,7 @@ def get_cultural_samples(n=100, seed=42):
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
-    sample_images = get_cultural_samples(n=400)
+    sample_images = get_cultural_samples(n=2)
     prompt = "Tell me in two words to which culture belongs this archeological ceramic artifact. No long sentences accepted."
 
     rows = []
