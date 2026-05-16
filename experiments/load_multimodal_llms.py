@@ -254,12 +254,40 @@ def infer_janus_pro(model, processor, image, prompt, device):
     )
 
 
+def load_molmo(device, dtype):
+    from transformers import AutoModelForCausalLM, AutoProcessor
+
+    model_id = "allenai/Molmo-7B-D-0924"
+    processor = AutoProcessor.from_pretrained(
+        model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
+    )
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
+    )
+    return model, processor, model_id
+
+
+def infer_molmo(model, processor, image, prompt, device):
+    from transformers import GenerationConfig
+
+    inputs = processor.process(images=[image], text=prompt)
+    inputs = {k: v.to(model.device).unsqueeze(0) for k, v in inputs.items()}
+    output = model.generate_from_batch(
+        inputs,
+        GenerationConfig(max_new_tokens=128, stop_strings="<|endoftext|>"),
+        tokenizer=processor.tokenizer,
+    )
+    generated_tokens = output[0, inputs["input_ids"].size(1) :]
+    return processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+
+
 LOADERS = {
     "LLaVA-1.5-7B": load_llava,
     "Qwen2.5-VL-7B": load_qwen25_vl,
     # "GLM-4V-9B": load_glm4v,
     "Gemma-3-4B-IT": load_gemma3,
-    "Janus-Pro-7B": load_janus_pro,
+    # "Janus-Pro-7B": load_janus_pro,
+    "Molmo-7B-D-0924": load_molmo,
     # "Moondream2": load_moondream2,
 }
 
@@ -268,7 +296,8 @@ INFER = {
     "Qwen2.5-VL-7B": infer_qwen25_vl,
     # "GLM-4V-9B": infer_glm4v,
     "Gemma-3-4B-IT": infer_gemma3,
-    "Janus-Pro-7B": infer_janus_pro,
+    # "Janus-Pro-7B": infer_janus_pro,
+    "Molmo-7B-D-0924": infer_molmo,
     # "Moondream2": infer_moondream2,
 }
 
