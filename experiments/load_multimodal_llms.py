@@ -305,7 +305,9 @@ def infer_molmo(model, processor, image, prompt, device):
     inputs = {k: v.to(model.device).unsqueeze(0) for k, v in inputs.items()}
     output = model.generate_from_batch(
         inputs,
-        GenerationConfig(max_new_tokens=128, stop_strings="<|endoftext|>"),
+        GenerationConfig(
+            max_new_tokens=128, stop_strings="<|endoftext|>", use_cache=True
+        ),
         tokenizer=processor.tokenizer,
     )
     generated_tokens = output[0, inputs["input_ids"].size(1) :]
