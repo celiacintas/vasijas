@@ -206,17 +206,19 @@ def infer_moondream2(model, tokenizer, image, prompt, device):
 
 
 def load_janus_pro(device, dtype):
-    from transformers import AutoModel, AutoTokenizer
+    from janus.models import VLChatProcessor, MultiModalityCausalLM
 
-    model_id = "deepseek-ai/Janus-Pro-7B"
-    model = AutoModel.from_pretrained(
-        model_id, trust_remote_code=True, torch_dtype="auto"
-    ).to(device)
-    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-    return model, tokenizer, model_id
+    model_path = "deepseek-ai/Janus-Pro-7B"
+    vl_chat_processor = VLChatProcessor.from_pretrained(model_path)
+
+    model = MultiModalityCausalLM.from_pretrained(
+        model_path, trust_remote_code=True, torch_dtype="auto"
+    )
+    model = model.to(dtype).to(device).eval()
+    return model, vl_chat_processor, model_path
 
 
-def infer_janus_pro(model, tokenizer, image, prompt, device):
+def infer_janus_pro(model, processor, image, prompt, device):
     conversation = [
         {
             "role": "User",
@@ -225,9 +227,27 @@ def infer_janus_pro(model, tokenizer, image, prompt, device):
         },
         {"role": "Assistant", "content": ""},
     ]
-    inputs = tokenizer(conversation, return_tensors="pt").to(device)
-    outputs = model.generate(**inputs, max_new_tokens=128)
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    prepare_inputs = processor(
+        conversations=conversation, images=[image], force_batchify=True
+    ).to(device, dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float16)
+
+    inputs_embeds = model.prepare_inputs_embeds(**prepare_inputs)
+
+    outputs = model.language_model.generate(
+        inputs_embeds=inputs_embeds,
+        attention_mask=prepare_inputs.attention_mask,
+        pad_token_id=processor.tokenizer.eos_token_id,
+        bos_token_id=processor.tokenizer.bos_token_id,
+        eos_token_id=processor.tokenizer.eos_token_id,
+        max_new_tokens=128,
+        do_sample=False,
+        use_cache=True,
+    )
+
+    return processor.tokenizer.decode(
+        outputs[0].cpu().tolist(), skip_special_tokens=True
+    )
 
 
 LOADERS = {

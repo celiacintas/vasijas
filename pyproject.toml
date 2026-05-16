@@ -10,6 +10,7 @@ dependencies = [
     "docling>=2.88.0",
     "gdown>=6.0.0",
     "ipython>=9.13.0",
+    "janus>=2.0.0",
     "matplotlib>=3.10.9",
     "peft>=0.19.0",
     "pip>=26.1.1",
