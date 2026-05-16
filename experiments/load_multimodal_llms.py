@@ -202,8 +202,7 @@ def load_moondream2(device, dtype):
 
 
 def infer_moondream2(model, tokenizer, image, prompt, device):
-    image_embeds = model.encode_image(image)
-    return model.answer_question(image_embeds, prompt, tokenizer)
+    return model.query(image, prompt)["answer"]
 
 
 LOADERS = {
