@@ -206,6 +206,10 @@ def infer_moondream2(model, tokenizer, image, prompt, device):
 
 
 def load_janus_pro(device, dtype):
+    import sys
+
+    sys.path.insert(0, "/tmp/janus")
+
     from janus.models import VLChatProcessor, MultiModalityCausalLM
 
     model_path = "deepseek-ai/Janus-Pro-7B"
