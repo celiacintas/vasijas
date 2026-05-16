@@ -257,9 +257,10 @@ def infer_janus_pro(model, processor, image, prompt, device):
 def load_molmo(device, dtype):
     import torch.nn as nn
     from transformers import AutoModelForCausalLM, AutoProcessor
-
     from transformers import PreTrainedModel
+    from transformers.cache_utils import DynamicCache
 
+    # --- patch nn.Module.__getattr__ for all_tied_weights_keys ---
     orig_getattr = nn.Module.__getattr__
 
     def _patched_getattr(self, name):
@@ -270,6 +271,7 @@ def load_molmo(device, dtype):
 
     nn.Module.__getattr__ = _patched_getattr
 
+    # --- patch PreTrainedModel._finalize_model_loading for tie_weights compat ---
     orig_finalize = PreTrainedModel._finalize_model_loading
 
     @classmethod
@@ -284,14 +286,19 @@ def load_molmo(device, dtype):
 
     PreTrainedModel._finalize_model_loading = _patched_finalize
 
+    # --- patch DynamicCache.__getitem__ for legacy tuple access ---
+    if not hasattr(DynamicCache, "__getitem__"):
+
+        def _dc_getitem(self, idx):
+            layer = self.layers[idx]
+            return (layer.keys, layer.values)
+
+        DynamicCache.__getitem__ = _dc_getitem
+
     model_id = "allenai/Molmo-7B-D-0924"
-    try:
-        model = AutoModelForCausalLM.from_pretrained(
-            model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
-        )
-    finally:
-        nn.Module.__getattr__ = orig_getattr
-        PreTrainedModel._finalize_model_loading = orig_finalize
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
+    )
     processor = AutoProcessor.from_pretrained(
         model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
     )
