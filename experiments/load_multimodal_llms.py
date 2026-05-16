@@ -255,13 +255,27 @@ def infer_janus_pro(model, processor, image, prompt, device):
 
 
 def load_molmo(device, dtype):
+    import torch.nn as nn
     from transformers import AutoModelForCausalLM, AutoProcessor
 
+    orig_getattr = nn.Module.__getattr__
+
+    def _patched_getattr(self, name):
+        if name == "all_tied_weights_keys":
+            keys = getattr(self, "_tied_weights_keys", {})
+            return {} if keys is None else keys
+        return orig_getattr(self, name)
+
+    nn.Module.__getattr__ = _patched_getattr
+
     model_id = "allenai/Molmo-7B-D-0924"
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
+        )
+    finally:
+        nn.Module.__getattr__ = orig_getattr
     processor = AutoProcessor.from_pretrained(
-        model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
-    )
-    model = AutoModelForCausalLM.from_pretrained(
         model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
     )
     return model, processor, model_id
