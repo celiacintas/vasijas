@@ -268,6 +268,21 @@ def load_molmo(device, dtype):
 
     nn.Module.__getattr__ = _patched_getattr
 
+    import transformers.modeling_utils as mu
+
+    orig_finalize = mu._finalize_model_loading
+
+    def _patched_finalize(model, load_config, loading_info):
+        try:
+            return orig_finalize(model, load_config, loading_info)
+        except TypeError as e:
+            if "tie_weights" in str(e) and "missing_keys" in str(e):
+                model.tie_weights()
+                return
+            raise
+
+    mu._finalize_model_loading = _patched_finalize
+
     model_id = "allenai/Molmo-7B-D-0924"
     try:
         model = AutoModelForCausalLM.from_pretrained(
@@ -275,6 +290,7 @@ def load_molmo(device, dtype):
         )
     finally:
         nn.Module.__getattr__ = orig_getattr
+        mu._finalize_model_loading = orig_finalize
     processor = AutoProcessor.from_pretrained(
         model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
     )
