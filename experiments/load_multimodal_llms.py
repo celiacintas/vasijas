@@ -258,6 +258,8 @@ def load_molmo(device, dtype):
     import torch.nn as nn
     from transformers import AutoModelForCausalLM, AutoProcessor
 
+    from transformers import PreTrainedModel
+
     orig_getattr = nn.Module.__getattr__
 
     def _patched_getattr(self, name):
@@ -268,11 +270,10 @@ def load_molmo(device, dtype):
 
     nn.Module.__getattr__ = _patched_getattr
 
-    import transformers.modeling_utils as mu
+    orig_finalize = PreTrainedModel._finalize_model_loading
 
-    orig_finalize = mu._finalize_model_loading
-
-    def _patched_finalize(model, load_config, loading_info):
+    @classmethod
+    def _patched_finalize(cls, model, load_config, loading_info):
         try:
             return orig_finalize(model, load_config, loading_info)
         except TypeError as e:
@@ -281,7 +282,7 @@ def load_molmo(device, dtype):
                 return
             raise
 
-    mu._finalize_model_loading = _patched_finalize
+    PreTrainedModel._finalize_model_loading = _patched_finalize
 
     model_id = "allenai/Molmo-7B-D-0924"
     try:
@@ -290,7 +291,7 @@ def load_molmo(device, dtype):
         )
     finally:
         nn.Module.__getattr__ = orig_getattr
-        mu._finalize_model_loading = orig_finalize
+        PreTrainedModel._finalize_model_loading = orig_finalize
     processor = AutoProcessor.from_pretrained(
         model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
     )
