@@ -172,17 +172,31 @@ def infer_gemma3(model, processor, image, prompt, device):
 
 
 def load_moondream2(device, dtype):
+    import torch.nn as nn
     from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    orig_getattr = nn.Module.__getattr__
+
+    def _patched_getattr(self, name):
+        if name == "all_tied_weights_keys":
+            keys = getattr(self, "_tied_weights_keys", {})
+            return {} if keys is None else keys
+        return orig_getattr(self, name)
+
+    nn.Module.__getattr__ = _patched_getattr
 
     model_id = "vikhyatk/moondream2"
     revision = "2025-06-21"
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        revision=revision,
-        torch_dtype=dtype,
-        device_map=device,
-        trust_remote_code=True,
-    )
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            revision=revision,
+            torch_dtype=dtype,
+            device_map=device,
+            trust_remote_code=True,
+        )
+    finally:
+        nn.Module.__getattr__ = orig_getattr
     tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
     return model, tokenizer, model_id
 
