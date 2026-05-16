@@ -205,12 +205,38 @@ def infer_moondream2(model, tokenizer, image, prompt, device):
     return model.query(image, prompt)["answer"]
 
 
+def load_janus_pro(device, dtype):
+    from transformers import AutoModel, AutoTokenizer
+
+    model_id = "deepseek-ai/Janus-Pro-7B"
+    model = AutoModel.from_pretrained(
+        model_id, trust_remote_code=True, torch_dtype="auto"
+    ).to(device)
+    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+    return model, tokenizer, model_id
+
+
+def infer_janus_pro(model, tokenizer, image, prompt, device):
+    conversation = [
+        {
+            "role": "User",
+            "content": f"<image_placeholder>\n{prompt}",
+            "images": [image],
+        },
+        {"role": "Assistant", "content": ""},
+    ]
+    inputs = tokenizer(conversation, return_tensors="pt").to(device)
+    outputs = model.generate(**inputs, max_new_tokens=128)
+    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+
 LOADERS = {
     "LLaVA-1.5-7B": load_llava,
     "Qwen2.5-VL-7B": load_qwen25_vl,
     # "GLM-4V-9B": load_glm4v,
     "Gemma-3-4B-IT": load_gemma3,
-    "Moondream2": load_moondream2,
+    "Janus-Pro-7B": load_janus_pro,
+    # "Moondream2": load_moondream2,
 }
 
 INFER = {
@@ -218,7 +244,8 @@ INFER = {
     "Qwen2.5-VL-7B": infer_qwen25_vl,
     # "GLM-4V-9B": infer_glm4v,
     "Gemma-3-4B-IT": infer_gemma3,
-    "Moondream2": infer_moondream2,
+    "Janus-Pro-7B": infer_janus_pro,
+    # "Moondream2": infer_moondream2,
 }
 
 
