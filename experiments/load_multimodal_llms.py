@@ -7,8 +7,6 @@ from pathlib import Path
 import torch
 from PIL import Image
 
-from ceramic_dataset import CeramicArtifactDataset
-
 
 def load_llava(device, dtype):
     from transformers import LlavaForConditionalGeneration, AutoProcessor
@@ -208,21 +206,46 @@ INFER = {
 
 
 def get_cultural_samples(n=100, seed=42):
-    dataset = CeramicArtifactDataset(image_dir="data")
-    by_culture = {}
-    for i in range(len(dataset)):
-        sample = dataset[i]
-        by_culture.setdefault(sample["culture"], []).append({**sample, "idx": i})
     rng = random.Random(seed)
-    per_culture = n // 2
+    data_root = Path("data")
+    culture_folders = ["Iberian", "Predynastic-egyptian", "Kushite", "Andean"]
+    by_culture = {}
+    for folder in culture_folders:
+        folder_path = data_root / folder
+        if not folder_path.is_dir():
+            print(f"  Warning: {folder_path} not found, skipping")
+            continue
+        images = sorted(
+            list(folder_path.glob("**/*.png")) + list(folder_path.glob("**/*.jpg"))
+        )
+        by_culture[folder.lower()] = [
+            {"culture": folder.lower(), "filename": p.name, "path": str(p), "idx": idx}
+            for idx, p in enumerate(images)
+        ]
+    num_cultures = len(by_culture)
+    if num_cultures == 0:
+        return []
+    per_culture = n // num_cultures
     sampled = []
-    for cul in ("iberian", "egyptian"):
-        pool = by_culture.get(cul, [])
+    for cul in sorted(by_culture):
+        pool = by_culture[cul]
         k = min(per_culture, len(pool))
         for entry in rng.sample(pool, k):
-            img = Image.open(dataset.image_paths[entry["idx"]]).convert("RGB")
+            img = Image.open(entry["path"]).convert("RGB")
             sampled.append({**entry, "pil_image": img})
         print(f"  {cul}: {k} samples (from {len(pool)} available)")
+    # Distribute remainder — one extra sample to random cultures with capacity
+    remain = n - len(sampled)
+    candidates = [c for c in sorted(by_culture) if len(by_culture[c]) > per_culture]
+    for cul in rng.sample(candidates, min(remain, len(candidates))):
+        pool = [
+            e for e in by_culture[cul] if e["path"] not in {s["path"] for s in sampled}
+        ]
+        if pool:
+            entry = rng.choice(pool)
+            img = Image.open(entry["path"]).convert("RGB")
+            sampled.append({**entry, "pil_image": img})
+            print(f"  {cul}: +1 extra sample")
     rng.shuffle(sampled)
     return sampled
 
