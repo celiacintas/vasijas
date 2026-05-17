@@ -336,7 +336,7 @@ if __name__ == "__main__":
     dtype = torch.float16 if device == "cuda" else torch.float32
     sample_images = get_cultural_samples(n=498)
     prompt = """Tell me in two words to which culture belongs this archeological ceramic artifact.
-        The possible responses are: Iberian, Predynastic-egyptian, Kushite, Andean, East African, West African, No long sentences accepted."""
+        The possible responses are: Iberian, Predynastic-egyptian, Kushite, Andean, East African, West African."""
 
     rows = []
     for name, loader in LOADERS.items():
