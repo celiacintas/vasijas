@@ -252,7 +252,7 @@ def infer_janus(model, processor, image, prompt, device):
         pad_token_id=tokenizer.eos_token_id,
         bos_token_id=tokenizer.bos_token_id,
         eos_token_id=tokenizer.eos_token_id,
-        max_new_tokens=128,
+        max_new_tokens=512,
         do_sample=False,
         use_cache=True,
     )
