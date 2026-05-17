@@ -223,11 +223,6 @@ def load_janus(device, dtype):
 
 
 def infer_janus(model, processor, image, prompt, device):
-    import sys
-
-    sys.path.insert(0, "/tmp/janus")
-    from janus.utils.io import load_pil_images
-
     tokenizer = processor.tokenizer
     conversation = [
         {
@@ -238,9 +233,8 @@ def infer_janus(model, processor, image, prompt, device):
         {"role": "Assistant", "content": ""},
     ]
 
-    pil_images = load_pil_images(conversation)
     prepare_inputs = processor(
-        conversations=conversation, images=pil_images, force_batchify=True
+        conversations=conversation, images=[image], force_batchify=True
     ).to(model.device)
 
     inputs_embeds = model.prepare_inputs_embeds(**prepare_inputs)
