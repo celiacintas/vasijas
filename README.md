@@ -27,7 +27,7 @@ Iberian pottery images are sourced from the doctoral thesis of Padilla.
 
 Predynastic Egyptian pottery images are sourced from the Predynastic Online Database (PONDA).
 
-Andean and Kushite pottery images are sourced from the online British Museum collection (`scripts/preprocessing/download_from_british_museum.py`).
+Andean and Kushite pottery images are sourced from the online British Museum collection (`scripts/preprocessing/download_from_british_museum.py`). East and West African pottery images also come from the British Museum, though we are not certain the museum holds the rights to those pictures and collection elements.
 
 ```BibTeX
 @misc{ponda2026,
