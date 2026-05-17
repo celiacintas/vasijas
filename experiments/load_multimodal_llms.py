@@ -213,6 +213,13 @@ def load_janus(device, dtype):
 
     model_path = "deepseek-ai/Janus-1.3B"
     vl_chat_processor = VLChatProcessor.from_pretrained(model_path)
+    if (
+        "<image_placeholder>"
+        not in vl_chat_processor.tokenizer.additional_special_tokens
+    ):
+        vl_chat_processor.tokenizer.add_special_tokens(
+            {"additional_special_tokens": ["<image_placeholder>"]}
+        )
 
     vl_gpt = MultiModalityCausalLM.from_pretrained(model_path, trust_remote_code=True)
     if device == "cuda":
