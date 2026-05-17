@@ -255,6 +255,7 @@ def infer_janus_pro(model, processor, image, prompt, device):
 
 
 def load_molmo(device, dtype):
+    import torch
     import torch.nn as nn
     from transformers import AutoModelForCausalLM, AutoProcessor
     from transformers import PreTrainedModel
@@ -292,6 +293,22 @@ def load_molmo(device, dtype):
 
     # Molmo's custom code predates DynamicCache; force legacy tuple cache
     model._supports_default_dynamic_cache = lambda: False
+
+    # Molmo's _update_model_kwargs_for_generation assumes cache_position exists
+    orig_update = model._update_model_kwargs_for_generation
+
+    def patched_update(model_kwargs, **kwargs):
+        if "cache_position" not in model_kwargs:
+            input_ids = model_kwargs.get("input_ids")
+            if input_ids is not None:
+                model_kwargs["cache_position"] = torch.arange(
+                    input_ids.shape[-1], device=input_ids.device
+                )
+            else:
+                model_kwargs["cache_position"] = torch.tensor([0])
+        return orig_update(model_kwargs, **kwargs)
+
+    model._update_model_kwargs_for_generation = patched_update.__get__(model)
 
     processor = AutoProcessor.from_pretrained(
         model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
