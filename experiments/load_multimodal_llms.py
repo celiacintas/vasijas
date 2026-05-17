@@ -205,24 +205,24 @@ def infer_moondream2(model, tokenizer, image, prompt, device):
     return model.query(image, prompt)["answer"]
 
 
-def load_janus_pro(device, dtype):
-    import sys
-
-    sys.path.insert(0, "/tmp/janus")
-
+def load_janus(device, dtype):
     from janus.models import VLChatProcessor, MultiModalityCausalLM
 
-    model_path = "deepseek-ai/Janus-Pro-7B"
+    model_path = "deepseek-ai/Janus-1.3B"
     vl_chat_processor = VLChatProcessor.from_pretrained(model_path)
 
-    model = MultiModalityCausalLM.from_pretrained(
-        model_path, trust_remote_code=True, torch_dtype="auto"
-    )
-    model = model.to(dtype).to(device).eval()
-    return model, vl_chat_processor, model_path
+    vl_gpt = MultiModalityCausalLM.from_pretrained(model_path, trust_remote_code=True)
+    if device == "cuda":
+        vl_gpt = vl_gpt.to(torch.bfloat16).cuda().eval()
+    else:
+        vl_gpt = vl_gpt.eval()
+    return vl_gpt, vl_chat_processor, model_path
 
 
-def infer_janus_pro(model, processor, image, prompt, device):
+def infer_janus(model, processor, image, prompt, device):
+    from janus.utils.io import load_pil_images
+
+    tokenizer = processor.tokenizer
     conversation = [
         {
             "role": "User",
@@ -232,104 +232,25 @@ def infer_janus_pro(model, processor, image, prompt, device):
         {"role": "Assistant", "content": ""},
     ]
 
+    pil_images = load_pil_images(conversation)
     prepare_inputs = processor(
-        conversations=conversation, images=[image], force_batchify=True
-    ).to(device, dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float16)
+        conversations=conversation, images=pil_images, force_batchify=True
+    ).to(model.device)
 
     inputs_embeds = model.prepare_inputs_embeds(**prepare_inputs)
 
     outputs = model.language_model.generate(
         inputs_embeds=inputs_embeds,
         attention_mask=prepare_inputs.attention_mask,
-        pad_token_id=processor.tokenizer.eos_token_id,
-        bos_token_id=processor.tokenizer.bos_token_id,
-        eos_token_id=processor.tokenizer.eos_token_id,
+        pad_token_id=tokenizer.eos_token_id,
+        bos_token_id=tokenizer.bos_token_id,
+        eos_token_id=tokenizer.eos_token_id,
         max_new_tokens=128,
         do_sample=False,
         use_cache=True,
     )
 
-    return processor.tokenizer.decode(
-        outputs[0].cpu().tolist(), skip_special_tokens=True
-    )
-
-
-def load_molmo(device, dtype):
-    import torch
-    import torch.nn as nn
-    from transformers import AutoModelForCausalLM, AutoProcessor
-    from transformers import PreTrainedModel
-
-    # --- patch nn.Module.__getattr__ for all_tied_weights_keys ---
-    orig_getattr = nn.Module.__getattr__
-
-    def _patched_getattr(self, name):
-        if name == "all_tied_weights_keys":
-            keys = getattr(self, "_tied_weights_keys", {})
-            return {} if keys is None else keys
-        return orig_getattr(self, name)
-
-    nn.Module.__getattr__ = _patched_getattr
-
-    # --- patch PreTrainedModel._finalize_model_loading for tie_weights compat ---
-    orig_finalize = PreTrainedModel._finalize_model_loading
-
-    @classmethod
-    def _patched_finalize(cls, model, load_config, loading_info):
-        try:
-            return orig_finalize(model, load_config, loading_info)
-        except TypeError as e:
-            if "tie_weights" in str(e) and "missing_keys" in str(e):
-                model.tie_weights()
-                return
-            raise
-
-    PreTrainedModel._finalize_model_loading = _patched_finalize
-
-    model_id = "allenai/Molmo-7B-D-0924"
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
-    )
-
-    # Molmo's custom code predates DynamicCache; force legacy tuple cache
-    model._supports_default_dynamic_cache = lambda: False
-
-    # Molmo's _update_model_kwargs_for_generation assumes cache_position exists
-    orig_update = model._update_model_kwargs_for_generation
-
-    def patched_update(model_kwargs, **kwargs):
-        if "cache_position" not in model_kwargs:
-            input_ids = model_kwargs.get("input_ids")
-            if input_ids is not None:
-                model_kwargs["cache_position"] = torch.arange(
-                    input_ids.shape[-1], device=input_ids.device
-                )
-            else:
-                model_kwargs["cache_position"] = torch.tensor([0])
-        return orig_update(model_kwargs, **kwargs)
-
-    model._update_model_kwargs_for_generation = patched_update.__get__(model)
-
-    processor = AutoProcessor.from_pretrained(
-        model_id, trust_remote_code=True, torch_dtype="auto", device_map="auto"
-    )
-    return model, processor, model_id
-
-
-def infer_molmo(model, processor, image, prompt, device):
-    from transformers import GenerationConfig
-
-    inputs = processor.process(images=[image], text=prompt)
-    inputs = {k: v.to(model.device).unsqueeze(0) for k, v in inputs.items()}
-    output = model.generate_from_batch(
-        inputs,
-        GenerationConfig(
-            max_new_tokens=128, stop_strings="<|endoftext|>", use_cache=True
-        ),
-        tokenizer=processor.tokenizer,
-    )
-    generated_tokens = output[0, inputs["input_ids"].size(1) :]
-    return processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+    return tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
 
 
 LOADERS = {
@@ -337,8 +258,7 @@ LOADERS = {
     "Qwen2.5-VL-7B": load_qwen25_vl,
     # "GLM-4V-9B": load_glm4v,
     "Gemma-3-4B-IT": load_gemma3,
-    # "Janus-Pro-7B": load_janus_pro,
-    "Molmo-7B-D-0924": load_molmo,
+    "Janus-1.3B": load_janus,
     # "Moondream2": load_moondream2,
 }
 
@@ -347,8 +267,7 @@ INFER = {
     "Qwen2.5-VL-7B": infer_qwen25_vl,
     # "GLM-4V-9B": infer_glm4v,
     "Gemma-3-4B-IT": infer_gemma3,
-    # "Janus-Pro-7B": infer_janus_pro,
-    "Molmo-7B-D-0924": infer_molmo,
+    "Janus-1.3B": infer_janus,
     # "Moondream2": infer_moondream2,
 }
 
@@ -356,7 +275,13 @@ INFER = {
 def get_cultural_samples(n=100, seed=42):
     rng = random.Random(seed)
     data_root = Path("data")
-    culture_folders = ["Iberian", "Predynastic-egyptian", "Kushite", "Andean"]
+    culture_folders = [
+        "Iberian",
+        "Predynastic-egyptian",
+        "Kushite",
+        "Andean",
+        "East African",
+    ]
     by_culture = {}
     for folder in culture_folders:
         folder_path = data_root / folder
