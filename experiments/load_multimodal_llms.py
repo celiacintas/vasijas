@@ -287,6 +287,7 @@ def get_cultural_samples(n=100, seed=42):
         "Kushite",
         "Andean",
         "East African",
+        "West African",
     ]
     by_culture = {}
     for folder in culture_folders:
