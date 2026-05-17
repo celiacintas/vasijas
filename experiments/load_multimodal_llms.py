@@ -335,7 +335,8 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
     sample_images = get_cultural_samples(n=498)
-    prompt = "Tell me in two words to which culture belongs this archeological ceramic artifact. No long sentences accepted."
+    prompt = """Tell me in two words to which culture belongs this archeological ceramic artifact.
+        The possible responses are: Iberian, Predynastic-egyptian, Kushite, Andean, East African, West African, No long sentences accepted."""
 
     rows = []
     for name, loader in LOADERS.items():
