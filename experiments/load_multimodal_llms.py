@@ -335,7 +335,15 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
     sample_images = get_cultural_samples(n=498)
-    prompt = """Classify this ceramic artifact into one culture: Andean, Predynastic-egyptian, Iberian, Kushite, East African, or West African. Respond with only the culture name."""
+    base_cultures = [
+        "Iberian",
+        "Predynastic-egyptian",
+        "Kushite",
+        "Andean",
+        "East African",
+        "West African",
+    ]
+    rng = random.Random(42)
     rows = []
     for name, loader in LOADERS.items():
         print(f"\n{'=' * 70}")
@@ -346,20 +354,31 @@ if __name__ == "__main__":
             model = result[0]
             proc_tok = result[1]
             print(f"  Parameters: {model.num_parameters() / 1e9:.2f}B")
-            print(f"  Images: {[s['filename'] for s in sample_images]}")
-            print(f"  Prompt: {prompt}")
+            print("  Prompt: randomized lettered options")
             print()
             infer_fn = INFER[name]
             for s in sample_images:
-                response = infer_fn(model, proc_tok, s["pil_image"], prompt, device)
-                clean = (
-                    response.split(prompt)[-1].strip()
-                    if prompt in response
-                    else response
+                cultures = base_cultures.copy()
+                rng.shuffle(cultures)
+                labels = " ".join(
+                    f"({chr(65 + i)}) {c}" for i, c in enumerate(cultures)
                 )
-                rows.append([name, clean.lower(), s["culture"], s["filename"]])
+                prompt = (
+                    f"Culture of this ceramic artifact? {labels} Answer letter only."
+                )
+                response = infer_fn(model, proc_tok, s["pil_image"], prompt, device)
+                letter = response.strip().split("\n")[0].strip().rstrip(".").upper()
+                if len(letter) == 1 and "A" <= letter <= "F":
+                    culture_name = cultures[ord(letter) - 65].lower()
+                else:
+                    culture_name = (
+                        letter.lower()
+                        if prompt not in response
+                        else response.split(prompt)[-1].strip().lower()
+                    )
+                rows.append([name, culture_name, s["culture"], s["filename"]])
                 print(f"  [{s['filename']}] (ground truth: {s['culture']})")
-                print(f"  {clean}")
+                print(f"  {culture_name}")
                 print()
             del model
             if torch.cuda.is_available():
