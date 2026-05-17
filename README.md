@@ -1,14 +1,37 @@
 ## Multimodal LLM Evaluation
 
-The script `experiments/load_multimodal_llms.py` evaluates vision-language models (LLaVA, Qwen2.5-VL, GLM-4V, Gemma-3) on ceramic artifact culture classification.
+The script `experiments/load_multimodal_llms.py` evaluates vision-language models (LLaVA, Qwen2.5-VL, Gemma-3, Janus-1.3B) on ceramic artifact culture classification.
 
-Run with `uv`:
+> **Janus-1.3B** requires Python 3.9 — it is the only version that works with its dependencies (`attrdict`).
+
+### Setup
 
 ```bash
-# Install dependencies
+# System dependencies
+apt-get install python3-pip tmux
+pip install uv
+
+# Clone and checkout branch
+git clone https://github.com/celiacintas/vasijas.git
+cd vasijas
+git checkout multimodal-bias
+
+# Install Python dependencies
 uv sync
 
-# Run evaluation on 3 random samples
+# Authenticate with Hugging Face (required for Gemma-3)
+uv run huggingface-cli login
+
+# Install flash-attn (required for Janus-1.3B)
+uv pip install flash-attn --no-build-isolation
+
+# Clone Janus repo (required for Janus-1.3B)
+git clone https://github.com/deepseek-ai/Janus.git /tmp/janus
+```
+
+### Run
+
+```bash
 uv run python experiments/load_multimodal_llms.py
 ```
 
@@ -27,7 +50,7 @@ Iberian pottery images are sourced from the doctoral thesis of Padilla.
 
 Predynastic Egyptian pottery images are sourced from the Predynastic Online Database (PONDA).
 
-Andean and Kushite pottery images are sourced from the online British Museum collection (`scripts/preprocessing/download_from_british_museum.py`). East and West African pottery images also come from the British Museum, though we are not certain the museum holds the rights to those pictures and collection elements.
+Andean and Kushite pottery images are sourced from the online British Museum collection. East and West African pottery images also come from the British Museum, though we are not certain the museum holds the rights to those pictures and collection elements.
 
 ```BibTeX
 @misc{ponda2026,

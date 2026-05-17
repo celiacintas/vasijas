@@ -2,15 +2,25 @@
 
 import csv
 import random
+import sys
+import traceback
 from pathlib import Path
 
 import torch
+import torch.nn as nn
 from PIL import Image
+from transformers import (
+    AutoModelForCausalLM,
+    AutoProcessor,
+    AutoTokenizer,
+    LlavaForConditionalGeneration,
+    Qwen2_5_VLForConditionalGeneration,
+)
+from janus.models import VLChatProcessor, MultiModalityCausalLM
 
 
 def load_llava(device, dtype):
-    from transformers import LlavaForConditionalGeneration, AutoProcessor
-
+    """Load LLaVA-1.5-7B model and processor from Hugging Face."""
     model_id = "llava-hf/llava-1.5-7b-hf"
     model = LlavaForConditionalGeneration.from_pretrained(
         model_id,
@@ -22,6 +32,7 @@ def load_llava(device, dtype):
 
 
 def infer_llava(model, processor, image, prompt, device):
+    """Run LLaVA inference with chat template, return decoded response."""
     messages = [
         {
             "role": "user",
@@ -42,8 +53,7 @@ def infer_llava(model, processor, image, prompt, device):
 
 
 def load_qwen25_vl(device, dtype):
-    from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
-
+    """Load Qwen2.5-VL-7B-Instruct model and processor from Hugging Face."""
     model_id = "Qwen/Qwen2.5-VL-7B-Instruct"
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_id,
@@ -55,6 +65,7 @@ def load_qwen25_vl(device, dtype):
 
 
 def infer_qwen25_vl(model, processor, image, prompt, device):
+    """Run Qwen2.5-VL inference with chat template, return decoded response."""
     messages = [
         {
             "role": "user",
@@ -78,67 +89,8 @@ def infer_qwen25_vl(model, processor, image, prompt, device):
     )
 
 
-def load_glm4v(device, dtype):
-    import torch.nn as nn
-    from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
-
-    orig_getattr = nn.Module.__getattr__
-
-    def _patched_getattr(self, name):
-        if name == "all_tied_weights_keys":
-            keys = getattr(self, "_tied_weights_keys", {})
-            return {} if keys is None else keys
-        return orig_getattr(self, name)
-
-    nn.Module.__getattr__ = _patched_getattr
-
-    model_id = "THUDM/glm-4v-9b"
-    config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
-    if not hasattr(config, "max_length") and hasattr(config, "seq_length"):
-        config.max_length = config.seq_length
-    try:
-        model = (
-            AutoModelForCausalLM.from_pretrained(
-                model_id,
-                config=config,
-                torch_dtype=torch.bfloat16,
-                low_cpu_mem_usage=True,
-                trust_remote_code=True,
-            )
-            .to(device)
-            .eval()
-        )
-    finally:
-        nn.Module.__getattr__ = orig_getattr
-    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-    if not hasattr(tokenizer, "batch_encode_plus"):
-        import functools
-        from transformers.tokenization_utils import PreTrainedTokenizer
-
-        tokenizer.batch_encode_plus = functools.partial(
-            PreTrainedTokenizer.batch_encode_plus, tokenizer
-        )
-    return model, tokenizer, model_id
-
-
-def infer_glm4v(model, tokenizer, image, prompt, device):
-    inputs = tokenizer.apply_chat_template(
-        [{"role": "user", "image": image, "content": prompt}],
-        add_generation_prompt=True,
-        tokenize=True,
-        return_tensors="pt",
-        return_dict=True,
-    ).to(device)
-    gen_kwargs = {"max_length": 200, "do_sample": True, "top_k": 1}
-    with torch.no_grad():
-        outputs = model.generate(**inputs, **gen_kwargs)
-        outputs = outputs[:, inputs["input_ids"].shape[1] :]
-        return tokenizer.decode(outputs[0])
-
-
 def load_gemma3(device, dtype):
-    from transformers import AutoModelForCausalLM, AutoProcessor
-
+    """Load Gemma-3-4B-IT model and processor from Hugging Face."""
     model_id = "google/gemma-3-4b-it"
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
@@ -150,6 +102,7 @@ def load_gemma3(device, dtype):
 
 
 def infer_gemma3(model, processor, image, prompt, device):
+    """Run Gemma-3 inference with chat template, return decoded response."""
     messages = [
         {
             "role": "user",
@@ -172,9 +125,7 @@ def infer_gemma3(model, processor, image, prompt, device):
 
 
 def load_moondream2(device, dtype):
-    import torch.nn as nn
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
+    """Load Moondream2 model and tokenizer with monkey-patch for all_tied_weights_keys."""
     orig_getattr = nn.Module.__getattr__
 
     def _patched_getattr(self, name):
@@ -202,14 +153,13 @@ def load_moondream2(device, dtype):
 
 
 def infer_moondream2(model, tokenizer, image, prompt, device):
+    """Run Moondream2 inference via query API."""
     return model.query(image, prompt)["answer"]
 
 
 def load_janus(device, dtype):
-    import sys
-
+    """Load Janus-1.3B model and processor from cloned repo at /tmp/janus."""
     sys.path.insert(0, "/tmp/janus")
-    from janus.models import VLChatProcessor, MultiModalityCausalLM
 
     model_path = "deepseek-ai/Janus-1.3B"
     vl_chat_processor = VLChatProcessor.from_pretrained(model_path)
@@ -230,6 +180,7 @@ def load_janus(device, dtype):
 
 
 def infer_janus(model, processor, image, prompt, device):
+    """Run Janus-1.3B inference with image placeholder token, return decoded response."""
     tokenizer = processor.tokenizer
     conversation = [
         {
@@ -263,7 +214,6 @@ def infer_janus(model, processor, image, prompt, device):
 LOADERS = {
     "LLaVA-1.5-7B": load_llava,
     "Qwen2.5-VL-7B": load_qwen25_vl,
-    # "GLM-4V-9B": load_glm4v,
     "Gemma-3-4B-IT": load_gemma3,
     "Janus-1.3B": load_janus,
     # "Moondream2": load_moondream2,
@@ -272,7 +222,6 @@ LOADERS = {
 INFER = {
     "LLaVA-1.5-7B": infer_llava,
     "Qwen2.5-VL-7B": infer_qwen25_vl,
-    # "GLM-4V-9B": infer_glm4v,
     "Gemma-3-4B-IT": infer_gemma3,
     "Janus-1.3B": infer_janus,
     # "Moondream2": infer_moondream2,
@@ -280,6 +229,7 @@ INFER = {
 
 
 def get_cultural_samples(n=100, seed=42):
+    """Sample n images evenly across culture folders, stratified by culture."""
     rng = random.Random(seed)
     data_root = Path("data")
     culture_folders = [
@@ -354,7 +304,7 @@ if __name__ == "__main__":
             model = result[0]
             proc_tok = result[1]
             print(f"  Parameters: {model.num_parameters() / 1e9:.2f}B")
-            print("  Prompt: randomized lettered options")
+            print("  Prompt: shuffled options with culture name response")
             print()
             infer_fn = INFER[name]
             for s in sample_images:
@@ -376,9 +326,7 @@ if __name__ == "__main__":
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
         except Exception as e:
-            print(f"  ✗ Failed: {e}")
-            import traceback
-
+            print(f"Failed: {e}")
             traceback.print_exc()
 
     output_path = Path("evaluation_results.csv")
