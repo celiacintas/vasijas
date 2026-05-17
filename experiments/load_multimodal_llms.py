@@ -360,22 +360,14 @@ if __name__ == "__main__":
             for s in sample_images:
                 cultures = base_cultures.copy()
                 rng.shuffle(cultures)
-                labels = " ".join(
-                    f"({chr(65 + i)}) {c}" for i, c in enumerate(cultures)
-                )
-                prompt = (
-                    f"Culture of this ceramic artifact? {labels} Answer letter only."
-                )
+                culture_list = ", ".join(cultures[:-1]) + f", or {cultures[-1]}"
+                prompt = f"Classify this ceramic artifact into one culture: {culture_list}. Respond with only the culture name."
                 response = infer_fn(model, proc_tok, s["pil_image"], prompt, device)
-                letter = response.strip().split("\n")[0].strip().rstrip(".").upper()
-                if len(letter) == 1 and "A" <= letter <= "F":
-                    culture_name = cultures[ord(letter) - 65].lower()
-                else:
-                    culture_name = (
-                        letter.lower()
-                        if prompt not in response
-                        else response.split(prompt)[-1].strip().lower()
-                    )
+                culture_name = (
+                    response.strip().lower().split("\n")[0]
+                    if prompt not in response
+                    else response.split(prompt)[-1].strip().lower()
+                )
                 rows.append([name, culture_name, s["culture"], s["filename"]])
                 print(f"  [{s['filename']}] (ground truth: {s['culture']})")
                 print(f"  {culture_name}")
