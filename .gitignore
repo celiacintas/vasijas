@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+*.egg-link
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+
+# Distribution / packaging
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Outputs / data
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+outputs/
+runs/
+wandb/
+lightning_logs/
+**model**/
+
+# Secrets
+.env
+.env.*
+*.key
+
+# Code agents
+.claude/
+CLAUDE.md
+AGENTS.md
+.copilot/
