@@ -64,6 +64,7 @@ runs/
 wandb/
 lightning_logs/
 **model**/
+generated_images/
 
 # Secrets
 .env
