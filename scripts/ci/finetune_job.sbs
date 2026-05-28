@@ -1,0 +1,22 @@
+#!/bin/bash
+#SBATCH --job-name=diffusion-vessel
+#SBATCH --partition=normal
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --mem=36G
+#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:tesla:1
+#SBATCH --chdir=/mnt/beegfs/mdmedina/Vasijas/vasijas
+
+OUTPUT_DIR="$1"
+
+if [ -z "$OUTPUT_DIR" ]; then
+    echo "ERROR: output directory argument is required" >&2
+    exit 1
+fi
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+cd "$REPO_DIR"
+
+uv run python scripts/modeling/finetune_vanilla_diffuser.py --output-dir "$OUTPUT_DIR"

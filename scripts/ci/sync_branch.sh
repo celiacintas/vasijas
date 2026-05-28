@@ -14,7 +14,7 @@ BRANCH="diffusion-ada"
 
 TAGS_BEFORE=$(git tag --list)
 
-git fetch origin "$BRANCH" --tags > /dev/null 2>&1
+git fetch origin "$BRANCH" --tags --force > /dev/null 2>&1
 
 LOCAL=$(git rev-parse "refs/heads/$BRANCH")
 REMOTE=$(git rev-parse "refs/remotes/origin/$BRANCH")
@@ -47,5 +47,6 @@ while IFS= read -r tag; do
     if [[ "$tag" =~ ^experimento-[A-Za-z0-9]+$ ]]; then
         mkdir -p "$REPO_DIR/experiments/$tag"
         echo "Launching experiment for tag $tag..."
+        sbatch "$REPO_DIR/scripts/ci/finetune_job.sbs" "$REPO_DIR/experiments/$tag"
     fi
 done <<< "$NEW_TAGS"
