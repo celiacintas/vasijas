@@ -88,24 +88,24 @@ def save_denoising_sequence(
         frames = []
         step_labels = []
 
-        for step_idx, t in enumerate(noise_scheduler.timesteps):
-            latent_model_input = torch.cat([latents] * 2)
-            latent_model_input = noise_scheduler.scale_model_input(
-                latent_model_input, t
-            )
-            noise_pred = unet(
-                latent_model_input,
-                t,
-                encoder_hidden_states=cond_embeds,
-            ).sample
-            noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-            noise_pred = noise_pred_uncond + guidance_scale * (
-                noise_pred_text - noise_pred_uncond
-            )
-            latents = noise_scheduler.step(noise_pred, t, latents).prev_sample
+        with torch.no_grad():
+            for step_idx, t in enumerate(noise_scheduler.timesteps):
+                latent_model_input = torch.cat([latents] * 2)
+                latent_model_input = noise_scheduler.scale_model_input(
+                    latent_model_input, t
+                )
+                noise_pred = unet(
+                    latent_model_input,
+                    t,
+                    encoder_hidden_states=cond_embeds,
+                ).sample
+                noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+                noise_pred = noise_pred_uncond + guidance_scale * (
+                    noise_pred_text - noise_pred_uncond
+                )
+                latents = noise_scheduler.step(noise_pred, t, latents).prev_sample
 
-            if step_idx in save_steps or step_idx == len(noise_scheduler.timesteps) - 1:
-                with torch.no_grad():
+                if step_idx in save_steps or step_idx == len(noise_scheduler.timesteps) - 1:
                     denoised = latents / 0.18215
                     image = vae.decode(denoised).sample
                     image = (
@@ -113,11 +113,12 @@ def save_denoising_sequence(
                         .clamp(0, 1)
                         .squeeze(0)
                         .cpu()
-                        .detach()
                         .permute(1, 2, 0)
                     )
-                frames.append(image.numpy())
-                step_labels.append(f"step {step_idx}")
+                    frames.append(image.numpy())
+                    step_labels.append(f"step {step_idx}")
+
+        torch.cuda.empty_cache()
 
         fig, axes = plt.subplots(1, len(frames), figsize=(4 * len(frames), 4))
         if len(frames) == 1:
