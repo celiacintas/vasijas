@@ -12,21 +12,32 @@ cd "$REPO_DIR"
 
 BRANCH="diffusion-ada"
 
-git fetch origin "$BRANCH" --tags
-
-LOCAL=$(git rev-parse "$BRANCH")
-REMOTE=$(git rev-parse "origin/$BRANCH")
-
-if [ "$LOCAL" = "$REMOTE" ]; then
-    exit 0
-fi
-
 TAGS_BEFORE=$(git tag --list)
 
-git pull origin "$BRANCH"
+git fetch origin "$BRANCH" --tags > /dev/null 2>&1
+
+LOCAL=$(git rev-parse "refs/heads/$BRANCH")
+REMOTE=$(git rev-parse "refs/remotes/origin/$BRANCH")
 
 TAGS_AFTER=$(git tag --list)
 NEW_TAGS=$(comm -13 <(echo "$TAGS_BEFORE" | sort) <(echo "$TAGS_AFTER" | sort))
+
+HAS_NEW_COMMITS=false
+[ "$LOCAL" != "$REMOTE" ] && HAS_NEW_COMMITS=true
+
+if [ -z "$NEW_TAGS" ] && [ "$HAS_NEW_COMMITS" = false ]; then
+    echo "No changes identified"
+    exit 0
+fi
+
+if [ "$HAS_NEW_COMMITS" = true ]; then
+    CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+    if [ "$CURRENT_BRANCH" = "$BRANCH" ]; then
+        git pull origin "$BRANCH" > /dev/null 2>&1
+    else
+        git fetch origin "$BRANCH:$BRANCH" > /dev/null 2>&1
+    fi
+fi
 
 if [ -z "$NEW_TAGS" ]; then
     exit 0
@@ -34,7 +45,7 @@ fi
 
 while IFS= read -r tag; do
     if [[ "$tag" =~ ^experimento-[A-Za-z0-9]+$ ]]; then
-        mkdir -p "$tag"
-        echo "$tag"
+        mkdir -p "$REPO_DIR/experiments/$tag"
+        echo "Launching experiment for tag $tag..."
     fi
 done <<< "$NEW_TAGS"
