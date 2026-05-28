@@ -6,7 +6,6 @@
 #SBATCH --mem=36G
 #SBATCH --gres=gpu:1
 #SBATCH --gres=gpu:tesla:1
-#SBATCH --chdir=/mnt/beegfs/mdmedina/Vasijas/vasijas
 
 OUTPUT_DIR="$1"
 
@@ -15,8 +14,9 @@ if [ -z "$OUTPUT_DIR" ]; then
     exit 1
 fi
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# Load modules
+spack load cuda@12.1.1
+source /mnt/beegfs/mdmedina/Vasijas/vasijas/.venv/bin/activate
 
-cd "$REPO_DIR"
-
-uv run python scripts/modeling/finetune_vanilla_diffuser.py --output-dir "$OUTPUT_DIR"
+# Run script
+srun python scripts/modeling/finetune_vanilla_diffuser.py --output-dir "$OUTPUT_DIR"

@@ -65,6 +65,8 @@ wandb/
 lightning_logs/
 **model**/
 generated_images/
+slurm-*.out
+
 
 # Secrets
 .env
