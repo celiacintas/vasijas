@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PATH=/usr/local/slurm/bin:/usr/bin:/bin:$PATH
+
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 if [ ! -d "$REPO_DIR/.git" ]; then
@@ -47,6 +49,8 @@ while IFS= read -r tag; do
     if [[ "$tag" =~ ^experimento-[A-Za-z0-9]+$ ]]; then
         mkdir -p "$REPO_DIR/experiments/$tag"
         echo "Launching experiment for tag $tag..."
-        sbatch "$REPO_DIR/scripts/ci/finetune_job.sbs" "$REPO_DIR/experiments/$tag"
+        sbatch "$REPO_DIR/scripts/ci/finetune_job.sbs" "$REPO_DIR/experiments/$tag" \
+            && echo "Job submitted for $tag" \
+            || echo "ERROR: sbatch failed for $tag (sbatch path: $(which sbatch 2>/dev/null || echo 'not found'))" >&2
     fi
 done <<< "$NEW_TAGS"
