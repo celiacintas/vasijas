@@ -266,19 +266,19 @@ def infer_minicpm(model, processor, image, prompt, device):
 
 
 LOADERS = {
+    "Janus-1.3B": load_janus,
     "LLaVA-1.5-7B": load_llava,
     "Qwen2.5-VL-7B": load_qwen25_vl,
     "Gemma-3-4B-IT": load_gemma3,
-    "Janus-1.3B": load_janus,
     # "MiniCPM-V-4.6": load_minicpm,  # needs transformers>=? to support minicpmv4_6 arch
     # "Moondream2": load_moondream2,
 }
 
 INFER = {
+    "Janus-1.3B": infer_janus,
     "LLaVA-1.5-7B": infer_llava,
     "Qwen2.5-VL-7B": infer_qwen25_vl,
     "Gemma-3-4B-IT": infer_gemma3,
-    "Janus-1.3B": infer_janus,
     # "MiniCPM-V-4.6": infer_minicpm,  # needs transformers>=? to support minicpmv4_6 arch
     # "Moondream2": infer_moondream2,
 }
