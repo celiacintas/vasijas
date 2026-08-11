@@ -1,5 +1,6 @@
 """Load and test multimodal LLMs from Hugging Face"""
 
+import argparse
 import csv
 import random
 import sys
@@ -11,6 +12,7 @@ import torch.nn as nn
 from PIL import Image
 from transformers import (
     AutoModelForCausalLM,
+    AutoModelForImageTextToText,
     AutoProcessor,
     AutoTokenizer,
     LlavaForConditionalGeneration,
@@ -159,7 +161,7 @@ def infer_moondream2(model, tokenizer, image, prompt, device):
 
 def load_janus(device, dtype):
     """Load Janus-1.3B model and processor from cloned repo at /tmp/janus."""
-    sys.path.insert(0, "/tmp/janus")
+    sys.path.insert(0, "/tmp/janus/janus")
 
     model_path = "deepseek-ai/Janus-1.3B"
     vl_chat_processor = VLChatProcessor.from_pretrained(model_path)
@@ -211,11 +213,60 @@ def infer_janus(model, processor, image, prompt, device):
     return tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
 
 
+def load_minicpm(device, dtype):
+    """Load MiniCPM-V-4.6 model and processor from Hugging Face."""
+    model_id = "openbmb/MiniCPM-V-4.6"
+    model = AutoModelForImageTextToText.from_pretrained(
+        model_id,
+        torch_dtype="auto",
+        device_map="auto",
+    )
+    processor = AutoProcessor.from_pretrained(model_id)
+    return model, processor, model_id
+
+
+def infer_minicpm(model, processor, image, prompt, device):
+    """Run MiniCPM-V-4.6 inference with chat template, return decoded response."""
+    downsample_mode = "16x"
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "image", "image": image},
+                {"type": "text", "text": prompt},
+            ],
+        }
+    ]
+    inputs = processor.apply_chat_template(
+        messages,
+        tokenize=True,
+        add_generation_prompt=True,
+        return_dict=True,
+        return_tensors="pt",
+        downsample_mode=downsample_mode,
+        max_slice_nums=36,
+    ).to(model.device)
+    generated_ids = model.generate(
+        **inputs, downsample_mode=downsample_mode, max_new_tokens=512
+    )
+    generated_ids_trimmed = [
+        out_ids[len(in_ids) :]
+        for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+    ]
+    output_text = processor.batch_decode(
+        generated_ids_trimmed,
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=False,
+    )
+    return output_text[0]
+
+
 LOADERS = {
     "LLaVA-1.5-7B": load_llava,
     "Qwen2.5-VL-7B": load_qwen25_vl,
     "Gemma-3-4B-IT": load_gemma3,
     "Janus-1.3B": load_janus,
+    # "MiniCPM-V-4.6": load_minicpm,  # needs transformers>=? to support minicpmv4_6 arch
     # "Moondream2": load_moondream2,
 }
 
@@ -224,6 +275,7 @@ INFER = {
     "Qwen2.5-VL-7B": infer_qwen25_vl,
     "Gemma-3-4B-IT": infer_gemma3,
     "Janus-1.3B": infer_janus,
+    # "MiniCPM-V-4.6": infer_minicpm,  # needs transformers>=? to support minicpmv4_6 arch
     # "Moondream2": infer_moondream2,
 }
 
@@ -282,6 +334,14 @@ def get_cultural_samples(n=100, seed=42):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--cpu-fallback",
+        action="store_true",
+        help="Fall back to CPU if model doesn't fit in GPU memory",
+    )
+    args = parser.parse_args()
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
     sample_images = get_cultural_samples(n=498)
@@ -296,38 +356,49 @@ if __name__ == "__main__":
     rng = random.Random(42)
     rows = []
     for name, loader in LOADERS.items():
+        current_device = device
+        current_dtype = dtype
         print(f"\n{'=' * 70}")
         print(f"  {name}")
         print(f"{'=' * 70}")
         try:
-            result = loader(device, dtype)
+            result = loader(current_device, current_dtype)
             model = result[0]
             proc_tok = result[1]
-            print(f"  Parameters: {model.num_parameters() / 1e9:.2f}B")
-            print("  Prompt: shuffled options with culture name response")
+        except (torch.cuda.OutOfMemoryError, torch.OutOfMemoryError, RuntimeError) as e:
+            if args.cpu_fallback and current_device == "cuda":
+                print(f"  GPU OOM for {name}, falling back to CPU ({e})")
+                current_device = "cpu"
+                current_dtype = torch.float32
+                result = loader(current_device, current_dtype)
+                model = result[0]
+                proc_tok = result[1]
+            else:
+                print(f"Failed: {e}")
+                traceback.print_exc()
+                continue
+        print(f"  Parameters: {model.num_parameters() / 1e9:.2f}B")
+        print("  Prompt: shuffled options with culture name response")
+        print()
+        infer_fn = INFER[name]
+        for s in sample_images:
+            cultures = base_cultures.copy()
+            rng.shuffle(cultures)
+            culture_list = ", ".join(cultures[:-1]) + f", or {cultures[-1]}"
+            prompt = f"Classify this ceramic artifact into one culture: {culture_list}. Respond with only the culture name."
+            response = infer_fn(model, proc_tok, s["pil_image"], prompt, current_device)
+            culture_name = (
+                response.strip().lower().split("\n")[0]
+                if prompt not in response
+                else response.split(prompt)[-1].strip().lower()
+            )
+            rows.append([name, culture_name, s["culture"], s["filename"]])
+            print(f"  [{s['filename']}] (ground truth: {s['culture']})")
+            print(f"  {culture_name}")
             print()
-            infer_fn = INFER[name]
-            for s in sample_images:
-                cultures = base_cultures.copy()
-                rng.shuffle(cultures)
-                culture_list = ", ".join(cultures[:-1]) + f", or {cultures[-1]}"
-                prompt = f"Classify this ceramic artifact into one culture: {culture_list}. Respond with only the culture name."
-                response = infer_fn(model, proc_tok, s["pil_image"], prompt, device)
-                culture_name = (
-                    response.strip().lower().split("\n")[0]
-                    if prompt not in response
-                    else response.split(prompt)[-1].strip().lower()
-                )
-                rows.append([name, culture_name, s["culture"], s["filename"]])
-                print(f"  [{s['filename']}] (ground truth: {s['culture']})")
-                print(f"  {culture_name}")
-                print()
-            del model
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except Exception as e:
-            print(f"Failed: {e}")
-            traceback.print_exc()
+        del model
+        if current_device == "cuda":
+            torch.cuda.empty_cache()
 
     output_path = Path("evaluation_results.csv")
     with open(output_path, "w", newline="", encoding="utf-8") as f:
