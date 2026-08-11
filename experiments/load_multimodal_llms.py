@@ -284,8 +284,13 @@ INFER = {
 }
 
 
-def get_cultural_samples(n=100, seed=42):
-    """Sample n images evenly across culture folders, stratified by culture."""
+def get_cultural_samples(n_runs=3, seed=42):
+    """Split the image pool into n_runs disjoint, culture-stratified sample sets.
+
+    Every image is assigned to exactly one run, so no filename is ever shared
+    between runs. Each run stays balanced across cultures (~1/n_runs of each
+    culture's images).
+    """
     rng = random.Random(seed)
     data_root = Path("data")
     culture_folders = [
@@ -309,32 +314,31 @@ def get_cultural_samples(n=100, seed=42):
             {"culture": folder.lower(), "filename": p.name, "path": str(p), "idx": idx}
             for idx, p in enumerate(images)
         ]
-    num_cultures = len(by_culture)
-    if num_cultures == 0:
-        return []
-    per_culture = n // num_cultures
-    sampled = []
+    if len(by_culture) == 0:
+        return [[] for _ in range(n_runs)]
+
+    # Largest k so that every run can take k images from every culture
+    # without reusing an image across runs (no filename overlaps) while
+    # keeping the per-run class counts balanced.
+    k = min(len(pool) // n_runs for pool in by_culture.values())
+    if k == 0:
+        raise ValueError(
+            f"Not enough images per culture for {n_runs} disjoint runs: "
+            + ", ".join(f"{c}={len(p)}" for c, p in by_culture.items())
+        )
+
+    runs = [[] for _ in range(n_runs)]
     for cul in sorted(by_culture):
         pool = by_culture[cul]
-        k = min(per_culture, len(pool))
-        for entry in rng.sample(pool, k):
-            img = Image.open(entry["path"]).convert("RGB")
-            sampled.append({**entry, "pil_image": img})
-        print(f"  {cul}: {k} samples (from {len(pool)} available)")
-    # Distribute remainder — one extra sample to random cultures with capacity
-    remain = n - len(sampled)
-    candidates = [c for c in sorted(by_culture) if len(by_culture[c]) > per_culture]
-    for cul in rng.sample(candidates, min(remain, len(candidates))):
-        pool = [
-            e for e in by_culture[cul] if e["path"] not in {s["path"] for s in sampled}
-        ]
-        if pool:
-            entry = rng.choice(pool)
-            img = Image.open(entry["path"]).convert("RGB")
-            sampled.append({**entry, "pil_image": img})
-            print(f"  {cul}: +1 extra sample")
-    rng.shuffle(sampled)
-    return sampled
+        chosen = rng.sample(pool, k * n_runs)
+        for i in range(n_runs):
+            runs[i].extend(chosen[i * k : (i + 1) * k])
+        print(f"  {cul}: {k} per run (from {len(pool)} available)")
+    for run in runs:
+        rng.shuffle(run)
+        for entry in run:
+            entry["pil_image"] = Image.open(entry["path"]).convert("RGB")
+    return runs
 
 
 if __name__ == "__main__":
@@ -344,11 +348,16 @@ if __name__ == "__main__":
         action="store_true",
         help="Fall back to CPU if model doesn't fit in GPU memory",
     )
+    parser.add_argument(
+        "--n-runs",
+        type=int,
+        default=3,
+        help="Number of independent runs with disjoint, class-balanced image samples",
+    )
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
-    sample_images = get_cultural_samples(n=498)
     base_cultures = [
         "Iberian",
         "Predynastic-egyptian",
@@ -357,56 +366,75 @@ if __name__ == "__main__":
         "East African",
         "West African",
     ]
-    rng = random.Random(42)
-    rows = []
-    for name, loader in LOADERS.items():
-        current_device = device
-        current_dtype = dtype
-        print(f"\n{'=' * 70}")
-        print(f"  {name}")
-        print(f"{'=' * 70}")
-        try:
-            result = loader(current_device, current_dtype)
-            model = result[0]
-            proc_tok = result[1]
-        except (torch.cuda.OutOfMemoryError, torch.OutOfMemoryError, RuntimeError) as e:
-            if args.cpu_fallback and current_device == "cuda":
-                print(f"  GPU OOM for {name}, falling back to CPU ({e})")
-                current_device = "cpu"
-                current_dtype = torch.float32
+    print("Splitting cultural samples into disjoint runs:")
+    sample_runs = get_cultural_samples(n_runs=args.n_runs)
+    print(
+        f"Runs: {[len(run) for run in sample_runs]} samples; "
+        f"per-run per-class: {len(sample_runs[0]) // len(base_cultures)}"
+    )
+    all_paths = [s["path"] for run in sample_runs for s in run]
+    assert len(all_paths) == len(set(all_paths)), "sample overlap across runs!"
+
+    for run_idx, sample_images in enumerate(sample_runs):
+        rng = random.Random(42 + run_idx)
+        rows = []
+        print(
+            f"\n{'=' * 70}\n  Run {run_idx + 1} ({len(sample_images)} samples)\n{'=' * 70}"
+        )
+        for name, loader in LOADERS.items():
+            current_device = device
+            current_dtype = dtype
+            print(f"\n{'=' * 70}")
+            print(f"  {name}")
+            print(f"{'=' * 70}")
+            try:
                 result = loader(current_device, current_dtype)
                 model = result[0]
                 proc_tok = result[1]
-            else:
-                print(f"Failed: {e}")
-                traceback.print_exc()
-                continue
-        print(f"  Parameters: {model.num_parameters() / 1e9:.2f}B")
-        print("  Prompt: shuffled options with culture name response")
-        print()
-        infer_fn = INFER[name]
-        for s in sample_images:
-            cultures = base_cultures.copy()
-            rng.shuffle(cultures)
-            culture_list = ", ".join(cultures[:-1]) + f", or {cultures[-1]}"
-            prompt = f"Classify this ceramic artifact into one culture: {culture_list}. Respond with only the culture name."
-            response = infer_fn(model, proc_tok, s["pil_image"], prompt, current_device)
-            culture_name = (
-                response.strip().lower().split("\n")[0]
-                if prompt not in response
-                else response.split(prompt)[-1].strip().lower()
-            )
-            rows.append([name, culture_name, s["culture"], s["filename"]])
-            print(f"  [{s['filename']}] (ground truth: {s['culture']})")
-            print(f"  {culture_name}")
+            except (
+                torch.cuda.OutOfMemoryError,
+                torch.OutOfMemoryError,
+                RuntimeError,
+            ) as e:
+                if args.cpu_fallback and current_device == "cuda":
+                    print(f"  GPU OOM for {name}, falling back to CPU ({e})")
+                    current_device = "cpu"
+                    current_dtype = torch.float32
+                    result = loader(current_device, current_dtype)
+                    model = result[0]
+                    proc_tok = result[1]
+                else:
+                    print(f"Failed: {e}")
+                    traceback.print_exc()
+                    continue
+            print(f"  Parameters: {model.num_parameters() / 1e9:.2f}B")
+            print("  Prompt: shuffled options with culture name response")
             print()
-        del model
-        if current_device == "cuda":
-            torch.cuda.empty_cache()
+            infer_fn = INFER[name]
+            for s in sample_images:
+                cultures = base_cultures.copy()
+                rng.shuffle(cultures)
+                culture_list = ", ".join(cultures[:-1]) + f", or {cultures[-1]}"
+                prompt = f"Classify this ceramic artifact into one culture: {culture_list}. Respond with only the culture name."
+                response = infer_fn(
+                    model, proc_tok, s["pil_image"], prompt, current_device
+                )
+                culture_name = (
+                    response.strip().lower().split("\n")[0]
+                    if prompt not in response
+                    else response.split(prompt)[-1].strip().lower()
+                )
+                rows.append([name, culture_name, s["culture"], s["filename"]])
+                print(f"  [{s['filename']}] (ground truth: {s['culture']})")
+                print(f"  {culture_name}")
+                print()
+            del model
+            if current_device == "cuda":
+                torch.cuda.empty_cache()
 
-    output_path = Path("evaluation_results.csv")
-    with open(output_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["model", "response", "groundtruth", "filename"])
-        writer.writerows(rows)
-    print(f"\nWrote {len(rows)} rows to {output_path}")
+        output_path = Path(f"evaluation_results_run{run_idx + 1}.csv")
+        with open(output_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["model", "response", "groundtruth", "filename"])
+            writer.writerows(rows)
+        print(f"\nWrote {len(rows)} rows to {output_path}")
