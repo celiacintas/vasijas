@@ -161,7 +161,7 @@ def infer_moondream2(model, tokenizer, image, prompt, device):
 
 def load_janus(device, dtype):
     """Load Janus-1.3B model and processor from cloned repo at /tmp/janus."""
-    sys.path.insert(0, "/tmp/janus/janus")
+    sys.path.insert(0, "/tmp/janus")
 
     model_path = "deepseek-ai/Janus-1.3B"
     vl_chat_processor = VLChatProcessor.from_pretrained(model_path)
