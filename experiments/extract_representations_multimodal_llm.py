@@ -7,9 +7,10 @@ and saves the intermediate representations using forward hooks.
 
 import argparse
 import pickle
+import random
 import traceback
 from collections import OrderedDict
-# from pathlib import Path
+from pathlib import Path
 
 import torch
 from PIL import Image
@@ -23,8 +24,6 @@ from transformers import (
 try:
     from experiments.load_multimodal_llms import get_cultural_samples
 except ModuleNotFoundError:
-    import random
-    from pathlib import Path
 
     def get_cultural_samples(n_runs=3, seed=42):
         rng = random.Random(seed)
@@ -70,6 +69,24 @@ except ModuleNotFoundError:
             for entry in run:
                 entry["pil_image"] = Image.open(entry["path"]).convert("RGB")
         return runs
+
+
+BASE_CULTURES = [
+    "Iberian",
+    "Predynastic-egyptian",
+    "Kushite",
+    "Andean",
+    "East African",
+    "West African",
+]
+
+
+def build_culture_prompt(rng):
+    """Build a classification prompt with shuffled culture names."""
+    cultures = BASE_CULTURES.copy()
+    rng.shuffle(cultures)
+    culture_list = ", ".join(cultures[:-1]) + f", or {cultures[-1]}"
+    return f"Classify this ceramic artifact into one culture: {culture_list}. Respond with only the culture name."
 
 
 def _patch_janus_nn_getattr():
@@ -193,15 +210,17 @@ def extract_representations_llava(model, processor, images, device, model_name):
     hook_mgr.register("vision_encoder", vision)
     hook_mgr.register("projector", projector)
 
+    rng = random.Random(42)
     reps = {}
     for img_info in images:
         img = img_info["pil_image"]
+        prompt = build_culture_prompt(rng)
         messages = [
             {
                 "role": "user",
                 "content": [
                     {"type": "image", "image": img},
-                    {"type": "text", "text": "Describe this image."},
+                    {"type": "text", "text": prompt},
                 ],
             }
         ]
@@ -253,15 +272,17 @@ def extract_representations_qwen25vl(model, processor, images, device, model_nam
     hook_mgr.register("vision_encoder", vision_enc)
     hook_mgr.register("projector", projector)
 
+    rng = random.Random(42)
     reps = {}
     for img_info in images:
         img = img_info["pil_image"]
+        prompt = build_culture_prompt(rng)
         messages = [
             {
                 "role": "user",
                 "content": [
                     {"type": "image", "image": img},
-                    {"type": "text", "text": "Describe this image."},
+                    {"type": "text", "text": prompt},
                 ],
             }
         ]
@@ -305,15 +326,17 @@ def extract_representations_gemma3(model, processor, images, device, model_name)
     hook_mgr.register("vision_encoder", vision)
     hook_mgr.register("projector", projector)
 
+    rng = random.Random(42)
     reps = {}
     for img_info in images:
         img = img_info["pil_image"]
+        prompt = build_culture_prompt(rng)
         messages = [
             {
                 "role": "user",
                 "content": [
                     {"type": "image", "image": img},
-                    {"type": "text", "text": "Describe this image."},
+                    {"type": "text", "text": prompt},
                 ],
             }
         ]
@@ -356,13 +379,15 @@ def extract_representations_janus(model, processor, images, device, model_name):
     hook_mgr.register("projector", projector)
 
     # tokenizer = processor.tokenizer
+    rng = random.Random(42)
     reps = {}
     for img_info in images:
         img = img_info["pil_image"]
+        prompt = build_culture_prompt(rng)
         conversation = [
             {
                 "role": "User",
-                "content": "<image_placeholder>\nDescribe this image.",
+                "content": f"<image_placeholder>\n{prompt}",
                 "images": [img],
             },
             {"role": "Assistant", "content": ""},
