@@ -107,6 +107,13 @@ def find_projector(model):
             sub = getattr(root, attr, None)
             if sub is not None:
                 return sub
+    # Qwen2.5-VL: projector (merger) is nested inside the vision transformer
+    vision = find_vision_module(model)
+    if vision is not None:
+        for attr in ("merger", "aligner", "multi_modal_projector"):
+            sub = getattr(vision, attr, None)
+            if sub is not None:
+                return sub
     return None
 
 
@@ -226,12 +233,24 @@ def extract_representations_qwen25vl(model, processor, images, device, model_nam
     if projector is None:
         raise RuntimeError("Cannot find projector in Qwen2.5-VL model")
 
-    vision_name = get_module_name(vision, "model")
-    proj_name = get_module_name(projector, "model")
-    print(f"  Vision: {vision_name}  Projector: {proj_name}")
+    # For Qwen2.5-VL, the merger is inside the vision transformer.
+    # Hooking model.visual would give the post-merger output, identical
+    # to the merger output. Instead, hook the last transformer block
+    # for the raw vision-encoder representation (pre-merger, vision-space).
+    vision_blocks = getattr(vision, "blocks", None)
+    if vision_blocks is not None and len(vision_blocks) > 0:
+        vision_enc = vision_blocks[-1]
+        print(
+            f"  Vision: {get_module_name(vision, 'model')}.blocks[-1]  Projector: {get_module_name(projector, 'model')}"
+        )
+    else:
+        vision_enc = vision
+        print(
+            f"  Vision: {get_module_name(vision, 'model')}  Projector: {get_module_name(projector, 'model')}"
+        )
 
     hook_mgr = HookManager()
-    hook_mgr.register("vision_encoder", vision)
+    hook_mgr.register("vision_encoder", vision_enc)
     hook_mgr.register("projector", projector)
 
     reps = {}
